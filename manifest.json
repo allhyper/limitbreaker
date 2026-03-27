@@ -2,7 +2,8 @@
   "name": "LimitBreaker",
   "short_name": "LimitBreaker",
   "description": "筋トレ記録PWA",
-  "start_url": "/",
+  "start_url": "/limitbreaker/",
+  "scope": "/limitbreaker/",
   "display": "standalone",
   "background_color": "#0a0a0a",
   "theme_color": "#E8593C",
@@ -11,12 +12,14 @@
     {
       "src": "icons/icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "icons/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
