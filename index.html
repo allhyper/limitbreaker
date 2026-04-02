@@ -104,8 +104,8 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
 /* ═══ SESSION ═══ */
 .sess-top{position:sticky;top:0;z-index:10;background:rgba(10,10,10,.98);border-bottom:0.5px solid var(--b);padding:6px 12px}
 .sess-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
-.sess-end{padding:5px 10px;background:var(--grd);border:0.5px solid rgba(76,175,80,.5);border-radius:6px;font-family:var(--fd);font-size:23px;letter-spacing:1px;color:var(--gr);cursor:pointer}
-.sess-cancel{padding:5px 8px;background:transparent;border:0.5px solid var(--b2);border-radius:6px;font-family:var(--fd);font-size:14px;letter-spacing:1px;color:var(--t3);cursor:pointer}
+.sess-end{padding:5px 10px;height:32px;background:var(--grd);border:0.5px solid rgba(76,175,80,.5);border-radius:6px;font-family:var(--fd);font-size:23px;letter-spacing:1px;color:var(--gr);cursor:pointer}
+.sess-cancel{padding:5px 10px;height:32px;background:transparent;border:0.5px solid rgba(232,89,60,0.6);border-radius:6px;font-family:var(--fd);font-size:23px;letter-spacing:1px;color:rgba(232,89,60,0.85);cursor:pointer}
 .sess-cancel:active{background:var(--bg3)}
 .sess-name{font-family:var(--fd);font-size:30px;letter-spacing:1.5px;color:var(--te)}
 .sess-elapsed{font-size:30px;color:var(--t3)}
@@ -115,18 +115,20 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
 .ex-pip.cur{background:var(--ac)}
 .sess-body{padding:7px 12px}
 .ex-nav{display:flex;align-items:center;gap:5px;margin-bottom:7px}
+.ex-act-row{display:flex;gap:6px;margin-bottom:7px}
+.ex-act-btn{flex:1;height:32px;padding:5px 10px;border-radius:5px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:3px;white-space:nowrap}
 .ex-nb{width:26px;height:26px;background:var(--bg3);border:0.5px solid var(--b2);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);font-size:14px;flex-shrink:0}
 .ex-nb:disabled{opacity:.2;cursor:not-allowed}
 .ex-name-big{font-family:var(--fd);font-size:30px;letter-spacing:1.5px;color:var(--te);flex:1;white-space:normal;overflow:visible;word-break:break-all;text-align:center;line-height:1.1}
 .ex-cnt{font-size:14px;color:var(--t3);flex-shrink:0;min-width:24px;text-align:right}
-.rest-row{display:flex;align-items:center;gap:4px;margin-bottom:7px}
+.rest-row{display:flex;align-items:center;gap:0;margin-bottom:7px}
 .rest-blk{background:var(--bg3);border:0.5px solid var(--b2);border-radius:7px;padding:5px 7px;display:flex;align-items:center;gap:4px;flex:1}
 .rlbl{font-size:17px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;white-space:nowrap}
 .rval{font-family:var(--fd);font-size:23px;color:var(--bl);line-height:1;min-width:26px;text-align:center}
 .radj{width:32px;height:32px;background:var(--bg4);border:0.5px solid var(--b2);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);font-size:22px;flex-shrink:0;user-select:none}
 .rgo{background:var(--bl);border:none;border-radius:8px;padding:7px 18px;color:#fff;font-family:var(--fd);font-size:22px;letter-spacing:2px;cursor:pointer;flex-shrink:0;font-weight:700}
 .rgo:active{opacity:.8}
-.addexq{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;background:var(--god);border:0.5px solid rgba(242,166,35,.4);border-radius:7px;padding:3px 7px;cursor:pointer;flex-shrink:0;min-width:40px}
+.addexq{background:var(--god);border:0.5px solid rgba(242,166,35,.4);color:var(--go)}
 /* タイマーインラインバー */
 .rest-timer-bar{display:none;height:4px;background:var(--bg4);border-radius:2px;margin-top:5px;overflow:hidden}
 .rest-timer-bar.show{display:block}
@@ -458,7 +460,6 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
       <div class="ex-name-big" id="sess-ex-nm">—</div>
       <button class="ex-nb" id="sess-next" onclick="goSEx(1)">›</button>
       <div class="ex-cnt" id="sess-ex-cnt">1/1</div>
-      <button onclick="delSessEx()" style="padding:5px 10px;height:32px;background:var(--bg3);border:0.5px solid var(--b2);border-radius:5px;font-size:13px;color:rgba(232,89,60,0.7);cursor:pointer;white-space:nowrap;flex-shrink:0">✕ 種目削除</button>
     </div>
     <div class="rest-row">
       <div style="flex:1">
@@ -478,7 +479,10 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
           </div>
         </div>
       </div>
-      <button class="addexq" onclick="openQae()" style="padding:5px 10px;height:32px;background:var(--god);border:0.5px solid rgba(242,166,35,.4);border-radius:5px;font-size:13px;color:var(--go);cursor:pointer;white-space:nowrap;flex-shrink:0;display:flex;align-items:center;gap:3px"><span style="font-size:15px;line-height:1">＋</span>種目追加</button>
+      <div style="display:flex;gap:0;align-items:center;flex-shrink:0;margin-left:16px">
+        <button class="ex-act-btn" onclick="delSessEx()" style="background:var(--bg3);border:0.5px solid var(--b2);color:rgba(232,89,60,0.7)">✕ 種目削除</button>
+        <button class="ex-act-btn addexq" onclick="openQae()"><span style="font-size:15px;line-height:1">＋</span>種目追加</button>
+      </div>
     </div>
     <div id="sess-ex-area"></div>
   </div>
@@ -785,6 +789,16 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
       <button onclick="closeModal('cr-modal')" style="flex:1;padding:10px;background:var(--bg3);border:0.5px solid var(--b2);border-radius:8px;font-family:var(--fd);font-size:15px;letter-spacing:1px;color:var(--t2);cursor:pointer" id="cr-cancel">キャンセル</button>
       <button onclick="saveRoutine()" style="flex:2;padding:10px;background:var(--ac);border:none;border-radius:8px;font-family:var(--fd);font-size:17px;letter-spacing:1.5px;color:#fff;cursor:pointer" id="cr-save">保存する</button>
     </div>
+  </div>
+</div>
+
+<!-- DELETE EXERCISE CONFIRM MODAL -->
+<div class="bottom-pop" id="del-ex-confirm-modal">
+  <div class="bp-box">
+    <div class="bp-handle"></div>
+    <div style="font-family:var(--fd);font-size:15px;letter-spacing:1.5px;color:var(--te);margin-bottom:12px">この種目を削除しますか？</div>
+    <button id="del-ex-confirm-btn" onclick="confirmDelSessEx()" style="width:100%;padding:10px;background:rgba(232,89,60,.16);border:0.5px solid rgba(232,89,60,.5);border-radius:8px;font-family:var(--fd);font-size:16px;letter-spacing:1px;color:rgba(232,89,60,.95);cursor:pointer;margin-bottom:6px">削除する</button>
+    <button onclick="closeModal('del-ex-confirm-modal')" style="width:100%;padding:10px;background:var(--bg3);border:0.5px solid var(--b2);border-radius:8px;font-family:var(--fd);font-size:15px;letter-spacing:1px;color:var(--t2);cursor:pointer">キャンセル</button>
   </div>
 </div>
 
@@ -1179,7 +1193,7 @@ function renderSessEx(){
         <div class="ex-name-big" style="font-size:14px;text-align:left;flex:1">${ex.n}</div>
         <span style="font-size:13px;color:var(--t3)">${ex.sets.length} sets</span>
       </div>
-      <div class="shead3"><div class="sh">SET</div><div class="sh">${settings.unit==='lb'?'LBS':'KG'}</div><div class="sh" style="font-size:11px;color:${exEquip!=='none'?'var(--bl)':'var(--b2)'}">TOT</div><div class="sh">REP</div><div class="sh" style="font-size:9px;letter-spacing:0">チート</div><div class="sh" style="font-size:9px;letter-spacing:0">補助</div><div></div></div>
+      <div class="shead3"><div class="sh">SET</div><div class="sh">${settings.unit==="lb"?"LBS":"KG"}<div style="font-size:9px;line-height:1;color:var(--t3);margin-top:1px">${exEquip==="barbell"?"プレート":exEquip==="dumbbell"?"片側":""}</div></div><div class="sh" style="font-size:11px;color:${exEquip!=="none"?"var(--bl)":"var(--b2)"}">${exEquip!=="none"?"総重量<div style=\"font-size:9px;line-height:1;color:var(--t3);margin-top:1px\">バー含む</div>":"—"}</div><div class="sh">REP</div><div class="sh" style="font-size:9px;letter-spacing:0">チート</div><div class="sh" style="font-size:9px;letter-spacing:0">補助</div><div></div></div>
       <div id="setrows"></div>
       <button class="addsb" onclick="addSessSet()" style="padding:5px;height:32px">＋ セット追加</button>
     </div>
@@ -1314,12 +1328,23 @@ function updateSet(i,key,val){
 
 function goSEx(dir){if(!session)return;session.idx=Math.max(0,Math.min(session.exs.length-1,session.idx+dir));renderSession()}
 function goSExTo(i){if(!session)return;session.idx=i;renderSession()}
-function delSessEx(){
+function performSessExDelete(){
   if(!session)return;
-  if(session.exs.length<=1){alert('最後の種目は削除できません');return;}
   session.exs.splice(session.idx,1);
   session.idx=Math.min(session.idx,session.exs.length-1);
   renderSession();
+}
+function delSessEx(){
+  if(!session)return;
+  if(session.exs.length<=1){alert('最後の種目は削除できません');return;}
+  const curEx=session.exs[session.idx];
+  const hasInput=!!(curEx?.sets||[]).some(set=>parseInt(set?.reps||0)>0);
+  if(hasInput){openModal('del-ex-confirm-modal');return;}
+  performSessExDelete();
+}
+function confirmDelSessEx(){
+  closeModal('del-ex-confirm-modal');
+  performSessExDelete();
 }
 function addSessSet(){
   if(!session)return;
@@ -1425,9 +1450,18 @@ function saveAndGoHome(){
 }
 
 /* ═══ INLINE TIMER ═══ */
+let _audioCtx=null;
+function getAudioCtx(){
+  const AC=window.AudioContext||window.webkitAudioContext;
+  if(!AC)throw new Error("AudioContext not supported");
+  if(!_audioCtx)_audioCtx=new AC();
+  if(_audioCtx.state==="suspended")_audioCtx.resume();
+  return _audioCtx;
+}
 let inlineTimerI=null,inlineTimerCur=0,inlineTimerTot=0,inlineTimerRunning=false;
 function toggleInlineTimer(){
   if(inlineTimerRunning||inlineTimerCur>0){stopInlineTimer();return;}
+  try{getAudioCtx();}catch(e){}
   inlineTimerCur=restSec;inlineTimerTot=restSec;inlineTimerRunning=true;
   const bar=document.getElementById('rest-timer-bar');
   const info=document.getElementById('rest-timer-info');
@@ -1473,7 +1507,7 @@ function setTimerSound(id){settings.timerSound=id;S.set('settings',settings);ren
 
 function playAlarm(){
   const sound=settings.timerSound||'beep';
-  if(sound==='off'){if(navigator.vibrate)navigator.vibrate([200,100,200]);return;}
+  if(sound==='off'){if(navigator.vibrate)navigator.vibrate([200,100,200,100,400]);return;}
   if(sound!=='beep'){
     try{
       // やる気を喚起するフレーズ（複数からランダム）
@@ -1511,19 +1545,23 @@ function playAlarm(){
     return;
   }
   try{
-    const ctx=new(window.AudioContext||window.webkitAudioContext)();
-    const beep=(freq,start,dur)=>{
-      const o=ctx.createOscillator();const g=ctx.createGain();
-      o.connect(g);g.connect(ctx.destination);
-      o.frequency.value=freq;o.type='sine';
-      g.gain.setValueAtTime(0,ctx.currentTime+start);
-      g.gain.linearRampToValueAtTime(0.4,ctx.currentTime+start+0.01);
-      g.gain.linearRampToValueAtTime(0,ctx.currentTime+start+dur);
-      o.start(ctx.currentTime+start);o.stop(ctx.currentTime+start+dur+0.05);
+    const ctx=getAudioCtx();
+    const playBeepSet=(offset=0)=>{
+      const beep=(freq,start,dur)=>{
+        const o=ctx.createOscillator();const g=ctx.createGain();
+        o.connect(g);g.connect(ctx.destination);
+        o.frequency.value=freq;o.type="sine";
+        g.gain.setValueAtTime(0,ctx.currentTime+offset+start);
+        g.gain.linearRampToValueAtTime(0.4,ctx.currentTime+offset+start+0.01);
+        g.gain.linearRampToValueAtTime(0,ctx.currentTime+offset+start+dur);
+        o.start(ctx.currentTime+offset+start);o.stop(ctx.currentTime+offset+start+dur+0.05);
+      };
+      beep(880,0,0.12);beep(1100,0.15,0.12);beep(1320,0.30,0.20);
     };
-    beep(880,0,0.12);beep(1100,0.15,0.12);beep(1320,0.30,0.20);
+    playBeepSet(0);
+    setTimeout(()=>{try{playBeepSet(0);}catch(e){}},800);
   }catch(e){}
-  if(navigator.vibrate)navigator.vibrate([100,50,100,50,200]);
+  if(navigator.vibrate)navigator.vibrate([200,100,200,100,400]);
 }
 function updateRing(c,tot){const r=document.getElementById('tring');if(r){r.style.strokeDashoffset=251*(1-c/tot);r.style.stroke=c<20?'#E8593C':'#3B8BD4';}}
 
