@@ -1179,7 +1179,15 @@ function renderSessEx(){
         <div class="ex-name-big" style="font-size:14px;text-align:left;flex:1">${ex.n}</div>
         <span style="font-size:13px;color:var(--t3)">${ex.sets.length} sets</span>
       </div>
-      <div class="shead3"><div class="sh">SET</div><div class="sh">${settings.unit==='lb'?'LBS':'KG'}</div><div class="sh" style="font-size:11px;color:${exEquip!=='none'?'var(--bl)':'var(--b2)'}">TOT</div><div class="sh">REP</div><div class="sh" style="font-size:9px;letter-spacing:0">チート</div><div class="sh" style="font-size:9px;letter-spacing:0">補助</div><div></div></div>
+      <div class="shead3">
+        <div class="sh">SET</div>
+        <div class="sh">${settings.unit==='lb'?'LBS':'KG'}<div style="font-size:9px;color:var(--t3);line-height:1">${exEquip==='barbell'?'プレート':exEquip==='dumbbell'?'片側':exEquip==='ezbar'?'プレート':'—'}</div></div>
+        <div class="sh" style="font-size:11px;color:${exEquip!=='none'?'var(--bl)':'var(--b2)'}">${exEquip!=='none'?'総重量':'—'}<div style="font-size:9px;color:${exEquip!=='none'?'var(--t3)':'var(--b2)'};line-height:1">${exEquip!=='none'?'バー含む':'—'}</div></div>
+        <div class="sh">REP</div>
+        <div class="sh" style="font-size:9px;letter-spacing:0">チート</div>
+        <div class="sh" style="font-size:9px;letter-spacing:0">補助</div>
+        <div></div>
+      </div>
       <div id="setrows"></div>
       <button class="addsb" onclick="addSessSet()" style="padding:5px;height:32px">＋ セット追加</button>
     </div>
@@ -1336,6 +1344,9 @@ function delSessSet(i){
   if(!session)return;
   const ex=session.exs[session.idx];
   if(ex.sets.length<=1)return;
+  const target=ex.sets[i]||{};
+  const hasInput=(parseFloat(target.kg||0)>0)||(String(target.reps||'').trim()!=='')||(String(target.note||'').trim()!=='');
+  if(hasInput&&!confirm('入力済みのセットを削除しますか？'))return;
   ex.sets.splice(i,1);
   refreshSetRows();
 }
@@ -1428,6 +1439,7 @@ function saveAndGoHome(){
 let inlineTimerI=null,inlineTimerCur=0,inlineTimerTot=0,inlineTimerRunning=false;
 function toggleInlineTimer(){
   if(inlineTimerRunning||inlineTimerCur>0){stopInlineTimer();return;}
+  ensureAlarmAudioReady().catch(()=>{});
   inlineTimerCur=restSec;inlineTimerTot=restSec;inlineTimerRunning=true;
   const bar=document.getElementById('rest-timer-bar');
   const info=document.getElementById('rest-timer-info');
@@ -1471,6 +1483,36 @@ function startInlineTI(){
 }
 function setTimerSound(id){settings.timerSound=id;S.set('settings',settings);renderSettings();}
 
+let alarmAudioCtx=null;
+function getAlarmAudioContext(){
+  if(!alarmAudioCtx){
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC)return null;
+    alarmAudioCtx=new AC();
+  }
+  return alarmAudioCtx;
+}
+async function ensureAlarmAudioReady(){
+  const ctx=getAlarmAudioContext();
+  if(!ctx)return null;
+  if(ctx.state==='suspended'){
+    try{await ctx.resume();}catch(e){}
+  }
+  return ctx;
+}
+function playBeepPattern(ctx,startOffset=0){
+  const beep=(freq,start,dur)=>{
+    const o=ctx.createOscillator();const g=ctx.createGain();
+    o.connect(g);g.connect(ctx.destination);
+    o.frequency.value=freq;o.type='sine';
+    g.gain.setValueAtTime(0,ctx.currentTime+startOffset+start);
+    g.gain.linearRampToValueAtTime(0.4,ctx.currentTime+startOffset+start+0.01);
+    g.gain.linearRampToValueAtTime(0,ctx.currentTime+startOffset+start+dur);
+    o.start(ctx.currentTime+startOffset+start);o.stop(ctx.currentTime+startOffset+start+dur+0.05);
+  };
+  beep(880,0,0.12);beep(1100,0.15,0.12);beep(1320,0.30,0.20);
+}
+
 function playAlarm(){
   const sound=settings.timerSound||'beep';
   if(sound==='off'){if(navigator.vibrate)navigator.vibrate([200,100,200]);return;}
@@ -1510,19 +1552,11 @@ function playAlarm(){
     if(navigator.vibrate)navigator.vibrate([100,50,100,50,200]);
     return;
   }
-  try{
-    const ctx=new(window.AudioContext||window.webkitAudioContext)();
-    const beep=(freq,start,dur)=>{
-      const o=ctx.createOscillator();const g=ctx.createGain();
-      o.connect(g);g.connect(ctx.destination);
-      o.frequency.value=freq;o.type='sine';
-      g.gain.setValueAtTime(0,ctx.currentTime+start);
-      g.gain.linearRampToValueAtTime(0.4,ctx.currentTime+start+0.01);
-      g.gain.linearRampToValueAtTime(0,ctx.currentTime+start+dur);
-      o.start(ctx.currentTime+start);o.stop(ctx.currentTime+start+dur+0.05);
-    };
-    beep(880,0,0.12);beep(1100,0.15,0.12);beep(1320,0.30,0.20);
-  }catch(e){}
+  ensureAlarmAudioReady().then(ctx=>{
+    if(!ctx)return;
+    playBeepPattern(ctx,0);
+    playBeepPattern(ctx,0.42);
+  }).catch(()=>{});
   if(navigator.vibrate)navigator.vibrate([100,50,100,50,200]);
 }
 function updateRing(c,tot){const r=document.getElementById('tring');if(r){r.style.strokeDashoffset=251*(1-c/tot);r.style.stroke=c<20?'#E8593C':'#3B8BD4';}}
