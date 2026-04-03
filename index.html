@@ -104,8 +104,8 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
 /* ═══ SESSION ═══ */
 .sess-top{position:sticky;top:0;z-index:10;background:rgba(10,10,10,.98);border-bottom:0.5px solid var(--b);padding:6px 12px}
 .sess-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
-.sess-end{padding:5px 10px;height:32px;background:var(--grd);border:0.5px solid rgba(76,175,80,.5);border-radius:6px;font-family:var(--fd);font-size:23px;letter-spacing:1px;color:var(--gr);cursor:pointer}
-.sess-cancel{padding:5px 10px;height:32px;background:transparent;border:0.5px solid rgba(232,89,60,0.6);border-radius:6px;font-family:var(--fd);font-size:23px;letter-spacing:1px;color:rgba(232,89,60,0.85);cursor:pointer}
+.sess-end{padding:5px 10px;height:32px;background:var(--grd);border:0.5px solid rgba(76,175,80,.5);border-radius:6px;font-family:var(--fd);font-size:21px;letter-spacing:1px;color:var(--gr);cursor:pointer;white-space:normal}
+.sess-cancel{padding:5px 10px;height:32px;background:transparent;border:0.5px solid rgba(232,89,60,0.6);border-radius:6px;font-family:var(--fd);font-size:21px;letter-spacing:1px;color:rgba(232,89,60,0.85);cursor:pointer;white-space:normal}
 .sess-cancel:active{background:var(--bg3)}
 .sess-name{font-family:var(--fd);font-size:30px;letter-spacing:1.5px;color:var(--te)}
 .sess-elapsed{font-size:30px;color:var(--t3)}
@@ -121,14 +121,15 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
 .ex-nb:disabled{opacity:.2;cursor:not-allowed}
 .ex-name-big{font-family:var(--fd);font-size:30px;letter-spacing:1.5px;color:var(--te);flex:1;white-space:normal;overflow:visible;word-break:break-all;text-align:center;line-height:1.1}
 .ex-cnt{font-size:14px;color:var(--t3);flex-shrink:0;min-width:24px;text-align:right}
-.rest-row{display:flex;align-items:center;gap:0;margin-bottom:7px}
-.rest-blk{background:var(--bg3);border:0.5px solid var(--b2);border-radius:7px;padding:5px 7px;display:flex;align-items:center;gap:4px;flex:1}
+.rest-row{display:flex;align-items:stretch;gap:0;margin-bottom:7px}
+.rest-blk{background:var(--bg3);border:0.5px solid var(--b2);border-radius:7px;padding:5px 7px;display:flex;align-items:center;gap:4px;flex:1;align-self:stretch}
 .rlbl{font-size:17px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;white-space:nowrap}
 .rval{font-family:var(--fd);font-size:23px;color:var(--bl);line-height:1;min-width:26px;text-align:center}
 .radj{width:32px;height:32px;background:var(--bg4);border:0.5px solid var(--b2);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);font-size:22px;flex-shrink:0;user-select:none}
 .rgo{background:var(--bl);border:none;border-radius:8px;padding:7px 18px;color:#fff;font-family:var(--fd);font-size:22px;letter-spacing:2px;cursor:pointer;flex-shrink:0;font-weight:700}
 .rgo:active{opacity:.8}
 .addexq{background:var(--god);border:0.5px solid rgba(242,166,35,.4);color:var(--go)}
+.rest-row .ex-act-btn,.rest-row .addexq{align-self:stretch;height:auto}
 /* タイマーインラインバー */
 .rest-timer-bar{display:none;height:4px;background:var(--bg4);border-radius:2px;margin-top:5px;overflow:hidden}
 .rest-timer-bar.show{display:block}
@@ -447,7 +448,7 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
   <div class="sess-top">
     <div class="sess-hdr">
       <div><div class="sess-name" id="sess-name">—</div><div class="sess-elapsed" id="sess-elapsed">0:00</div></div>
-      <div style="display:flex;gap:6px;align-items:center">
+      <div style="display:flex;gap:4px;align-items:center">
         <button class="sess-cancel" onclick="cancelSession()">← キャンセル</button>
         <button class="sess-end" onclick="endSession()">保存して終了</button>
       </div>
@@ -479,7 +480,7 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
           </div>
         </div>
       </div>
-      <div style="display:flex;gap:0;align-items:center;flex-shrink:0;margin-left:16px">
+      <div style="display:flex;gap:0;align-items:stretch;margin-left:12px">
         <button class="ex-act-btn" onclick="delSessEx()" style="background:var(--bg3);border:0.5px solid var(--b2);color:rgba(232,89,60,0.7)">✕ 種目削除</button>
         <button class="ex-act-btn addexq" onclick="openQae()"><span style="font-size:15px;line-height:1">＋</span>種目追加</button>
       </div>
@@ -1226,17 +1227,24 @@ function renderSessEx(){
       const rec80=rmVal>0?Math.round(rmVal*0.8*2)/2:0; // 筋肥大 80%
       const rec85=rmVal>0?Math.round(rmVal*0.85*2)/2:0; // 筋力 85%
       const rm=rmVal>0?`<span style="font-size:12px;color:var(--go);margin-left:6px">1RM≈${rmVal}kg</span>`:'';
+      const showPlateTarget=exEquip==='barbell'||exEquip==='ezbar';
+      const targetBar=Number(settings.barbell??20)||20;
+      const targetCollar=(Number(settings.collar??0.5)||0.5)*2;
+      const rec80Plate=Math.max(0,rec80-targetBar-targetCollar);
+      const rec85Plate=Math.max(0,rec85-targetBar-targetCollar);
       const suggest=rmVal>0?`<div style="margin-top:7px;padding-top:6px;border-top:0.5px solid var(--b)">
         <div style="font-size:11px;color:var(--t3);margin-bottom:5px;letter-spacing:.8px">TODAY'S TARGET</div>
         <div style="display:flex;gap:6px">
           <div style="flex:1;background:var(--bld);border:0.5px solid rgba(59,139,212,.4);border-radius:8px;padding:8px;text-align:center">
             <div style="font-size:11px;color:var(--bl);margin-bottom:2px">筋肥大 (80%)</div>
-            <div style="font-family:var(--fd);font-size:26px;color:var(--bl);line-height:1">${fmtW(rec80)}</div>
+            <div style="font-size:11px;color:var(--t3);margin-top:1px">総重量: <span style="font-family:var(--fd);font-size:20px;color:var(--bl);line-height:1">${fmtW(rec80)}</span></div>
+            ${showPlateTarget?`<div style="font-size:11px;color:var(--t3);margin-top:1px">プレートのみ: <span style="font-family:var(--fd);font-size:20px;color:var(--bl);line-height:1">${fmtW(rec80Plate)}</span></div>`:''}
             <div style="font-size:11px;color:var(--t3);margin-top:1px">× 10 rep</div>
           </div>
           <div style="flex:1;background:var(--acd);border:0.5px solid rgba(232,89,60,.4);border-radius:8px;padding:8px;text-align:center">
             <div style="font-size:11px;color:var(--ac);margin-bottom:2px">筋力UP (85%)</div>
-            <div style="font-family:var(--fd);font-size:26px;color:var(--ac);line-height:1">${fmtW(rec85)}</div>
+            <div style="font-size:11px;color:var(--t3);margin-top:1px">総重量: <span style="font-family:var(--fd);font-size:20px;color:var(--ac);line-height:1">${fmtW(rec85)}</span></div>
+            ${showPlateTarget?`<div style="font-size:11px;color:var(--t3);margin-top:1px">プレートのみ: <span style="font-family:var(--fd);font-size:20px;color:var(--ac);line-height:1">${fmtW(rec85Plate)}</span></div>`:''}
             <div style="font-size:11px;color:var(--t3);margin-top:1px">× 6 rep</div>
           </div>
         </div>
