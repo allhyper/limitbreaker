@@ -916,7 +916,7 @@ records.forEach(r=>{if(!r._id)r._id='r'+Math.random().toString(36).slice(2);});
 let bodyData=S.get('bodyData')||[]; // [{date,wt,bf,mm,waist,memo}]
 const saveRecs=()=>S.set('records',records);
 const saveBD=()=>S.set('bodyData',bodyData);
-const dateKey=d=>new Date(d).toISOString().slice(0,10);
+const dateKey=d=>{const dt=new Date(d);const y=dt.getFullYear();const m=String(dt.getMonth()+1).padStart(2,"0");const day=String(dt.getDate()).padStart(2,"0");return`${y}-${m}-${day}`;};
 
 /* ═══ SESSION STATE ═══ */
 let session=null;
@@ -1116,9 +1116,10 @@ function calcStreak(){
 
 /* ═══ EXERCISE SELECT (部位→種目 for starting workout) ═══ */
 function openExSelPop(){
-  espF='';renderEspFilter();renderEspList();openModal('ex-sel-pop');
+  espF='';renderEspFilter();openModal('ex-sel-pop');
   // start new session
   sessExercises=[];sessIdx=0;sessName='フリートレーニング';sessStart=Date.now();
+  renderEspList();
   document.getElementById('esp-title').textContent='種目を選択（複数可）';
 }
 function renderEspFilter(){
@@ -1225,9 +1226,12 @@ function renderSessEx(){
         const assistStr=parseInt(s.assist||0)>0?` -${s.assist}A`:'';
         return`<span style="background:var(--bg3);border:0.5px solid var(--b);border-radius:4px;padding:1px 5px;font-size:13px;color:var(--t2);white-space:nowrap">${tot}×${s.reps}${cheatStr}${assistStr}</span>`;
       }).join('');
-      const maxKg=Math.max(...prevEx.sets.map(s=>s.kg||0));
-      const topReps=parseInt(prevEx.sets.find(s=>s.kg===maxKg)?.reps||1);
-      const rmVal=maxKg>0?Math.round(maxKg*(1+topReps/30)):0;
+      const prevExEquip=(prevEx.equip)||"none";
+      const prevBarAdd=prevExEquip==="barbell"?(settings.barbell||20)+(settings.collarBarbell??settings.collar??0.5)*2:prevExEquip==="ezbar"?(settings.ezbar||10)+(settings.collarEzbar??settings.collar??0.5)*2:prevExEquip==="dumbbell"?((settings.dumbbell??2))+(settings.collarDumbbell??settings.collar??0):0;
+      const maxKgPlate=Math.max(...prevEx.sets.map(s=>s.kg||0));
+      const maxKgTotal=maxKgPlate+(prevBarAdd>0?prevBarAdd:0);
+      const topReps=parseInt(prevEx.sets.find(s=>s.kg===maxKgPlate)?.reps||1);
+      const rmVal=maxKgTotal>0?Math.round(maxKgTotal*(1+topReps/30)):0;
       const rec80=rmVal>0?Math.round(rmVal*0.8*2)/2:0; // 筋肥大 80%
       const rec85=rmVal>0?Math.round(rmVal*0.85*2)/2:0; // 筋力 85%
       const rm=rmVal>0?`<span style="font-size:12px;color:var(--go);margin-left:6px">1RM≈${rmVal}kg</span>`:'';
@@ -1408,6 +1412,7 @@ function addExToSess(mid){
 
 function cancelSession(){
   session=null;
+  sessExercises=[];
   clearInterval(elapsedI);
   clearInterval(timerI);
   stopInlineTimer();
