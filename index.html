@@ -113,13 +113,13 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
 .ex-pip{flex:1;height:3px;background:var(--b2);border-radius:2px;cursor:pointer}
 .ex-pip.done{background:var(--gr)}
 .ex-pip.cur{background:var(--ac)}
-.sess-body{padding:0;display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+.sess-body{padding:7px 12px}
 .ex-nav{display:flex;align-items:center;gap:5px;margin-bottom:7px}
 .ex-act-row{display:flex;gap:6px;margin-bottom:7px}
 .ex-act-btn{flex:1;height:32px;padding:5px 10px;border-radius:5px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:3px;white-space:nowrap}
 .ex-nb{width:26px;height:26px;background:var(--bg3);border:0.5px solid var(--b2);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);font-size:14px;flex-shrink:0}
 .ex-nb:disabled{opacity:.2;cursor:not-allowed}
-.ex-name-big{font-family:var(--fd);font-size:clamp(16px,5vw,28px);letter-spacing:1px;color:var(--te);flex:1;white-space:normal;overflow:hidden;word-break:break-all;text-align:center;line-height:1.2;max-height:2.6em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.ex-name-big{font-family:var(--fd);font-size:30px;letter-spacing:1.5px;color:var(--te);flex:1;white-space:normal;overflow:visible;word-break:break-all;text-align:center;line-height:1.1}
 .ex-cnt{font-size:14px;color:var(--t3);flex-shrink:0;min-width:24px;text-align:right}
 .rest-row{display:flex;align-items:stretch;gap:0;margin-bottom:7px}
 .rest-blk{background:var(--bg3);border:0.5px solid var(--b2);border-radius:7px;padding:5px 7px;display:flex;align-items:center;gap:4px;flex:1;align-self:stretch}
@@ -445,7 +445,7 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
 </div>
 
 <!-- SESSION -->
-<div class="sc" id="sc-session" style="padding:0;display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden">
+<div class="sc" id="sc-session" style="padding:0">
   <div class="sess-top">
     <div class="sess-hdr">
       <div><div class="sess-name" id="sess-name">—</div><div class="sess-elapsed" id="sess-elapsed">0:00</div></div>
@@ -457,39 +457,37 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
     <div class="ex-pips" id="ex-pips"></div>
   </div>
   <div class="sess-body">
-    <div class="sess-fixed" style="padding:7px 12px 0;flex-shrink:0">
-      <div class="ex-nav">
-        <button class="ex-nb" id="sess-prev" onclick="goSEx(-1)">‹</button>
-        <div class="ex-name-big" id="sess-ex-nm">—</div>
-        <button class="ex-nb" id="sess-next" onclick="goSEx(1)">›</button>
-        <div class="ex-cnt" id="sess-ex-cnt">1/1</div>
+    <div class="ex-nav">
+      <button class="ex-nb" id="sess-prev" onclick="goSEx(-1)">‹</button>
+      <div class="ex-name-big" id="sess-ex-nm">—</div>
+      <button class="ex-nb" id="sess-next" onclick="goSEx(1)">›</button>
+      <div class="ex-cnt" id="sess-ex-cnt">1/1</div>
+    </div>
+    <div id="rm-target-area"></div>
+    <div class="rest-row">
+      <div style="flex:1">
+        <div class="rest-blk">
+          <div class="rlbl" id="sess-rl">REST</div>
+          <div class="radj" onclick="adjRest(-15)">−</div>
+          <div class="rval" id="sess-rv">90s</div>
+          <div class="radj" onclick="adjRest(15)">＋</div>
+          <button class="rgo" id="rest-go-btn" onclick="toggleInlineTimer()">GO</button>
+        </div>
+        <div class="rest-timer-bar" id="rest-timer-bar"><div class="rest-timer-fill" id="rest-timer-fill" style="width:100%"></div></div>
+        <div class="rest-timer-info" id="rest-timer-info">
+          <span style="font-family:var(--fd);font-size:16px;color:var(--bl)" id="rest-timer-cnt">90</span>
+          <div style="display:flex;gap:6px">
+            <button style="font-size:12px;padding:2px 8px;background:var(--bld);border:0.5px solid rgba(59,139,212,.3);border-radius:5px;color:var(--bl);cursor:pointer" onclick="toggleInlineTimerPause()" id="rest-timer-pause">⏸</button>
+            <button style="font-size:12px;padding:2px 8px;background:var(--bg3);border:0.5px solid var(--b2);border-radius:5px;color:var(--t2);cursor:pointer" onclick="stopInlineTimer()">SKIP</button>
+          </div>
+        </div>
       </div>
-      <div id="rm-target-area"></div>
-      <div class="rest-row">
-        <div style="flex:1">
-          <div class="rest-blk">
-            <div class="rlbl" id="sess-rl">REST</div>
-            <div class="radj" onclick="adjRest(-15)">−</div>
-            <div class="rval" id="sess-rv">90s</div>
-            <div class="radj" onclick="adjRest(15)">＋</div>
-            <button class="rgo" id="rest-go-btn" onclick="toggleInlineTimer()">GO</button>
-          </div>
-          <div class="rest-timer-bar" id="rest-timer-bar"><div class="rest-timer-fill" id="rest-timer-fill" style="width:100%"></div></div>
-          <div class="rest-timer-info" id="rest-timer-info">
-            <span style="font-family:var(--fd);font-size:16px;color:var(--bl)" id="rest-timer-cnt">90</span>
-            <div style="display:flex;gap:6px">
-              <button style="font-size:12px;padding:2px 8px;background:var(--bld);border:0.5px solid rgba(59,139,212,.3);border-radius:5px;color:var(--bl);cursor:pointer" onclick="toggleInlineTimerPause()" id="rest-timer-pause">⏸</button>
-              <button style="font-size:12px;padding:2px 8px;background:var(--bg3);border:0.5px solid var(--b2);border-radius:5px;color:var(--t2);cursor:pointer" onclick="stopInlineTimer()">SKIP</button>
-            </div>
-          </div>
-        </div>
-        <div style="display:flex;gap:0;align-items:stretch;margin-left:12px">
-          <button class="ex-act-btn" onclick="delSessEx()" style="background:var(--bg3);border:0.5px solid var(--b2);color:rgba(232,89,60,0.7)">✕ 種目削除</button>
-          <button class="ex-act-btn addexq" onclick="openQae()"><span style="font-size:15px;line-height:1">＋</span>種目追加</button>
-        </div>
+      <div style="display:flex;gap:0;align-items:stretch;margin-left:12px">
+        <button class="ex-act-btn" onclick="delSessEx()" style="background:var(--bg3);border:0.5px solid var(--b2);color:rgba(232,89,60,0.7)">✕ 種目削除</button>
+        <button class="ex-act-btn addexq" onclick="openQae()"><span style="font-size:15px;line-height:1">＋</span>種目追加</button>
       </div>
     </div>
-    <div id="sess-ex-area" style="overflow-y:auto;flex:1;min-height:0;padding:0 12px 12px"></div>
+    <div id="sess-ex-area"></div>
   </div>
 </div>
 
@@ -918,7 +916,7 @@ records.forEach(r=>{if(!r._id)r._id='r'+Math.random().toString(36).slice(2);});
 let bodyData=S.get('bodyData')||[]; // [{date,wt,bf,mm,waist,memo}]
 const saveRecs=()=>S.set('records',records);
 const saveBD=()=>S.set('bodyData',bodyData);
-const dateKey=d=>{const dt=new Date(d);const y=dt.getFullYear();const m=String(dt.getMonth()+1).padStart(2,'0');const day=String(dt.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;};
+const dateKey=d=>new Date(d).toISOString().slice(0,10);
 
 /* ═══ SESSION STATE ═══ */
 let session=null;
@@ -1118,9 +1116,9 @@ function calcStreak(){
 
 /* ═══ EXERCISE SELECT (部位→種目 for starting workout) ═══ */
 function openExSelPop(){
+  espF='';renderEspFilter();renderEspList();openModal('ex-sel-pop');
   // start new session
   sessExercises=[];sessIdx=0;sessName='フリートレーニング';sessStart=Date.now();
-  espF='';renderEspFilter();renderEspList();openModal('ex-sel-pop');
   document.getElementById('esp-title').textContent='種目を選択（複数可）';
 }
 function renderEspFilter(){
@@ -1227,14 +1225,9 @@ function renderSessEx(){
         const assistStr=parseInt(s.assist||0)>0?` -${s.assist}A`:'';
         return`<span style="background:var(--bg3);border:0.5px solid var(--b);border-radius:4px;padding:1px 5px;font-size:13px;color:var(--t2);white-space:nowrap">${tot}×${s.reps}${cheatStr}${assistStr}</span>`;
       }).join('');
-      const prevExEquip=(prevEx.equip)||'none';
-      const prevBarAdd=prevExEquip==='barbell'?(settings.barbell||20)+(settings.collarBarbell??settings.collar??0.5)*2
-        :prevExEquip==='ezbar'?(settings.ezbar||10)+(settings.collarEzbar??settings.collar??0.5)*2
-        :prevExEquip==='dumbbell'?((settings.dumbbell??2))+(settings.collarDumbbell??settings.collar??0):0;
-      const maxKgPlate=Math.max(...prevEx.sets.map(s=>s.kg||0));
-      const maxKgTotal=maxKgPlate+(prevBarAdd>0?prevBarAdd:0);
-      const topReps=parseInt(prevEx.sets.find(s=>s.kg===maxKgPlate)?.reps||1);
-      const rmVal=maxKgTotal>0?Math.round(maxKgTotal*(1+topReps/30)):0;
+      const maxKg=Math.max(...prevEx.sets.map(s=>s.kg||0));
+      const topReps=parseInt(prevEx.sets.find(s=>s.kg===maxKg)?.reps||1);
+      const rmVal=maxKg>0?Math.round(maxKg*(1+topReps/30)):0;
       const rec80=rmVal>0?Math.round(rmVal*0.8*2)/2:0; // 筋肥大 80%
       const rec85=rmVal>0?Math.round(rmVal*0.85*2)/2:0; // 筋力 85%
       const rm=rmVal>0?`<span style="font-size:12px;color:var(--go);margin-left:6px">1RM≈${rmVal}kg</span>`:'';
@@ -1415,7 +1408,6 @@ function addExToSess(mid){
 
 function cancelSession(){
   session=null;
-  sessExercises=[];
   clearInterval(elapsedI);
   clearInterval(timerI);
   stopInlineTimer();
