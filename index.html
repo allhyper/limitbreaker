@@ -383,7 +383,7 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
       </div>
       <!-- 目標カード（日付の直下・固定） -->
       <div class="goal-card" id="goal-card" onclick="startGoalEdit()" style="margin-top:6px">
-        <div class="goal-edit-hint" style="display:none">タップで編集</div>
+        <div class="goal-edit-hint">タップで編集</div>
         <div class="goal-text" id="goal-display"></div>
       </div>
     </div>
@@ -1071,11 +1071,11 @@ function renderGoalCard(){
   if(goalText){
     el.innerHTML=goalText.replace(/\n/g,'<br>');
     el.className='goal-text';
-    if(hint)hint.style.display='';
+    if(hint)hint.style.display='none';
   } else {
     el.innerHTML='🎯 目標を入力してください';
     el.className='goal-placeholder';
-    if(hint)hint.style.display='none';
+    if(hint)hint.style.display='';
   }
 }
 function startGoalEdit(){
