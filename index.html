@@ -113,15 +113,15 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
 .ex-pip{flex:1;height:3px;background:var(--b2);border-radius:2px;cursor:pointer}
 .ex-pip.done{background:var(--gr)}
 .ex-pip.cur{background:var(--ac)}
-.sess-body{padding:7px 12px}
-.ex-nav{display:flex;align-items:center;gap:5px;margin-bottom:7px}
+.sess-body{padding:7px 12px 0;display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+.ex-nav{display:flex;align-items:center;gap:5px;margin-bottom:7px;flex-shrink:0}
 .ex-act-row{display:flex;gap:6px;margin-bottom:7px}
 .ex-act-btn{flex:1;height:32px;padding:5px 10px;border-radius:5px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:3px;white-space:nowrap}
 .ex-nb{width:26px;height:26px;background:var(--bg3);border:0.5px solid var(--b2);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);font-size:14px;flex-shrink:0}
 .ex-nb:disabled{opacity:.2;cursor:not-allowed}
 .ex-name-big{font-family:var(--fd);font-size:30px;letter-spacing:1.5px;color:var(--te);flex:1;white-space:normal;overflow:visible;word-break:break-all;text-align:center;line-height:1.1}
 .ex-cnt{font-size:14px;color:var(--t3);flex-shrink:0;min-width:24px;text-align:right}
-.rest-row{display:flex;align-items:stretch;gap:0;margin-bottom:7px}
+.rest-row{display:flex;align-items:stretch;gap:0;margin-bottom:7px;flex-shrink:0}
 .rest-blk{background:var(--bg3);border:0.5px solid var(--b2);border-radius:7px;padding:5px 7px;display:flex;align-items:center;gap:4px;flex:1;align-self:stretch}
 .rlbl{font-size:17px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;white-space:nowrap}
 .rval{font-family:var(--fd);font-size:23px;color:var(--bl);line-height:1;min-width:26px;text-align:center}
@@ -136,11 +136,11 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
 .rest-timer-fill{height:100%;background:var(--bl);border-radius:2px;transition:width 1s linear}
 .rest-timer-info{display:none;align-items:center;justify-content:space-between;margin-top:3px}
 .rest-timer-info.show{display:flex}
-.excard{background:linear-gradient(135deg,#1a1010,#111);border:0.5px solid rgba(232,89,60,.35);border-radius:11px;padding:9px;margin-bottom:6px}
+.excard{background:linear-gradient(135deg,#1a1010,#111);border:0.5px solid rgba(232,89,60,.35);border-radius:11px;padding:9px;margin-bottom:6px;display:flex;flex-direction:column;flex:1;min-height:0}
 /* set grid: SET | KG | TOTAL | REPS | Cheat | Assist | Del */
-.shead3{display:grid;grid-template-columns:16px 1fr 38px 1fr 1fr 1fr 22px;gap:2px;align-items:center;margin-bottom:2px}
+.shead3{display:grid;grid-template-columns:16px 1fr 38px 1fr 1fr 1fr 22px;gap:2px;align-items:center;margin-bottom:2px;flex-shrink:0}
 .srow3{display:grid;grid-template-columns:16px 1fr 38px 1fr 1fr 1fr 22px;gap:2px;align-items:center;margin-bottom:2px}
-#setrows{}
+#setrows{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .srow3-note{margin-top:1px;margin-bottom:4px;padding-left:2px}
 .sh{font-size:17px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;text-align:center}
 .sn{font-family:var(--fd);font-size:24px;color:var(--t3);text-align:center}
@@ -151,7 +151,7 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
 .sinote{background:var(--bg4);border:0.5px solid var(--b2);border-radius:4px;padding:4px 3px;font-size:14px;color:var(--t2);width:100%;outline:none}
 .sinote:focus{border-color:var(--bl)}
 .sinote::placeholder{color:var(--t3)}
-.addsb{width:100%;padding:4px;background:none;border:0.5px dashed var(--b2);border-radius:5px;color:var(--t3);font-size:14px;cursor:pointer;margin-top:3px;display:flex;align-items:center;justify-content:center;gap:3px}
+.addsb{width:100%;padding:4px;background:none;border:0.5px dashed var(--b2);border-radius:5px;color:var(--t3);font-size:14px;cursor:pointer;margin-top:3px;display:flex;align-items:center;justify-content:center;gap:3px;flex-shrink:0}
 .scheat{display:flex;align-items:center;justify-content:center}
 .scheat input[type=checkbox]{width:16px;height:16px;accent-color:var(--go);cursor:pointer;flex-shrink:0}
 .scheat input[type=checkbox]:checked+span{color:var(--go)}
@@ -463,7 +463,7 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
       <button class="ex-nb" id="sess-next" onclick="goSEx(1)">›</button>
       <div class="ex-cnt" id="sess-ex-cnt">1/1</div>
     </div>
-    <div id="rm-target-area"></div>
+    <div id="rm-target-area" style="flex-shrink:0"></div>
     <div class="rest-row">
       <div style="flex:1">
         <div class="rest-blk">
@@ -487,7 +487,7 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
         <button class="ex-act-btn addexq" onclick="openQae()"><span style="font-size:15px;line-height:1">＋</span>種目追加</button>
       </div>
     </div>
-    <div id="sess-ex-area"></div>
+    <div id="sess-ex-area" style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column"></div>
   </div>
 </div>
 
