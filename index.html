@@ -102,7 +102,7 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
 .sk-l{font-size:17px;color:var(--t3);text-transform:uppercase}
 
 /* ═══ SESSION ═══ */
-.sess-top{background:rgba(10,10,10,.98);border-bottom:0.5px solid var(--b);padding:6px 12px;flex-shrink:0}
+.sess-top{position:sticky;top:0;z-index:10;background:rgba(10,10,10,.98);border-bottom:0.5px solid var(--b);padding:6px 12px}
 .sess-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
 .sess-end{padding:8px 10px;height:auto;background:var(--grd);border:0.5px solid rgba(76,175,80,.5);border-radius:6px;font-family:var(--fd);font-size:21px;letter-spacing:1px;color:var(--gr);cursor:pointer;white-space:normal}
 .sess-cancel{padding:8px 10px;height:auto;background:transparent;border:0.5px solid rgba(232,89,60,0.6);border-radius:6px;font-family:var(--fd);font-size:21px;letter-spacing:1px;color:rgba(232,89,60,0.85);cursor:pointer;white-space:normal}
@@ -113,14 +113,7 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
 .ex-pip{flex:1;height:3px;background:var(--b2);border-radius:2px;cursor:pointer}
 .ex-pip.done{background:var(--gr)}
 .ex-pip.cur{background:var(--ac)}
-.sess-body{
-  display:flex;
-  flex-direction:column;
-  flex:1;
-  min-height:0;
-  overflow:hidden;
-  padding:0;
-}
+.sess-body{padding:7px 12px}
 .ex-nav{display:flex;align-items:center;gap:5px;margin-bottom:7px}
 .ex-act-row{display:flex;gap:6px;margin-bottom:7px}
 .ex-act-btn{flex:1;height:32px;padding:5px 10px;border-radius:5px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:3px;white-space:nowrap}
@@ -452,7 +445,7 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
 </div>
 
 <!-- SESSION -->
-<div class="sc" id="sc-session" style="padding:0;display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden">
+<div class="sc" id="sc-session" style="padding:0">
   <div class="sess-top">
     <div class="sess-hdr">
       <div><div class="sess-name" id="sess-name">—</div><div class="sess-elapsed" id="sess-elapsed">0:00</div></div>
@@ -464,42 +457,37 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
     <div class="ex-pips" id="ex-pips"></div>
   </div>
   <div class="sess-body">
-
-    <div id="sess-fixed" style="flex-shrink:0;padding:7px 12px 0">
-      <div class="ex-nav">
-        <button class="ex-nb" id="sess-prev" onclick="goSEx(-1)">‹</button>
-        <div class="ex-name-big" id="sess-ex-nm">—</div>
-        <button class="ex-nb" id="sess-next" onclick="goSEx(1)">›</button>
-        <div class="ex-cnt" id="sess-ex-cnt">1/1</div>
+    <div class="ex-nav">
+      <button class="ex-nb" id="sess-prev" onclick="goSEx(-1)">‹</button>
+      <div class="ex-name-big" id="sess-ex-nm">—</div>
+      <button class="ex-nb" id="sess-next" onclick="goSEx(1)">›</button>
+      <div class="ex-cnt" id="sess-ex-cnt">1/1</div>
+    </div>
+    <div id="rm-target-area"></div>
+    <div class="rest-row">
+      <div style="flex:1">
+        <div class="rest-blk">
+          <div class="rlbl" id="sess-rl">REST</div>
+          <div class="radj" onclick="adjRest(-15)">−</div>
+          <div class="rval" id="sess-rv">90s</div>
+          <div class="radj" onclick="adjRest(15)">＋</div>
+          <button class="rgo" id="rest-go-btn" onclick="toggleInlineTimer()">GO</button>
+        </div>
+        <div class="rest-timer-bar" id="rest-timer-bar"><div class="rest-timer-fill" id="rest-timer-fill" style="width:100%"></div></div>
+        <div class="rest-timer-info" id="rest-timer-info">
+          <span style="font-family:var(--fd);font-size:16px;color:var(--bl)" id="rest-timer-cnt">90</span>
+          <div style="display:flex;gap:6px">
+            <button style="font-size:12px;padding:2px 8px;background:var(--bld);border:0.5px solid rgba(59,139,212,.3);border-radius:5px;color:var(--bl);cursor:pointer" onclick="toggleInlineTimerPause()" id="rest-timer-pause">⏸</button>
+            <button style="font-size:12px;padding:2px 8px;background:var(--bg3);border:0.5px solid var(--b2);border-radius:5px;color:var(--t2);cursor:pointer" onclick="stopInlineTimer()">SKIP</button>
+          </div>
+        </div>
       </div>
-      <div id="rm-target-area"></div>
-      <div class="rest-row">
-        <div style="flex:1">
-          <div class="rest-blk">
-            <div class="rlbl" id="sess-rl">REST</div>
-            <div class="radj" onclick="adjRest(-15)">−</div>
-            <div class="rval" id="sess-rv">90s</div>
-            <div class="radj" onclick="adjRest(15)">＋</div>
-            <button class="rgo" id="rest-go-btn" onclick="toggleInlineTimer()">GO</button>
-          </div>
-          <div class="rest-timer-bar" id="rest-timer-bar"><div class="rest-timer-fill" id="rest-timer-fill" style="width:100%"></div></div>
-          <div class="rest-timer-info" id="rest-timer-info">
-            <span style="font-family:var(--fd);font-size:16px;color:var(--bl)" id="rest-timer-cnt">90</span>
-            <div style="display:flex;gap:6px">
-              <button style="font-size:12px;padding:2px 8px;background:var(--bld);border:0.5px solid rgba(59,139,212,.3);border-radius:5px;color:var(--bl);cursor:pointer" onclick="toggleInlineTimerPause()" id="rest-timer-pause">⏸</button>
-              <button style="font-size:12px;padding:2px 8px;background:var(--bg3);border:0.5px solid var(--b2);border-radius:5px;color:var(--t2);cursor:pointer" onclick="stopInlineTimer()">SKIP</button>
-            </div>
-          </div>
-        </div>
-        <div style="display:flex;gap:0;align-items:stretch;margin-left:12px">
-          <button class="ex-act-btn" onclick="delSessEx()" style="background:var(--bg3);border:0.5px solid var(--b2);color:rgba(232,89,60,0.7)">✕ 種目削除</button>
-          <button class="ex-act-btn addexq" onclick="openQae()"><span style="font-size:15px;line-height:1">＋</span>種目追加</button>
-        </div>
+      <div style="display:flex;gap:0;align-items:stretch;margin-left:12px">
+        <button class="ex-act-btn" onclick="delSessEx()" style="background:var(--bg3);border:0.5px solid var(--b2);color:rgba(232,89,60,0.7)">✕ 種目削除</button>
+        <button class="ex-act-btn addexq" onclick="openQae()"><span style="font-size:15px;line-height:1">＋</span>種目追加</button>
       </div>
     </div>
-
-    <div id="sess-ex-area" style="flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 12px 16px"></div>
-
+    <div id="sess-ex-area"></div>
   </div>
 </div>
 
@@ -1209,11 +1197,11 @@ function renderSessEx(){
         <div class="ex-name-big" style="font-size:14px;text-align:left;flex:1">${ex.n}</div>
         <span style="font-size:13px;color:var(--t3)">${ex.sets.length} sets</span>
       </div>
+      <div id="sess-prev-rec" style="margin-top:4px"></div>
       <div class="shead3"><div class="sh">SET</div><div class="sh">${settings.unit==="lb"?"LBS":"KG"}<div style="font-size:9px;line-height:1;color:var(--t3);margin-top:1px">${exEquip==="barbell"?"プレート":exEquip==="dumbbell"?"片側":""}</div></div><div class="sh" style="font-size:11px;color:${exEquip!=="none"?"var(--bl)":"var(--b2)"}">${exEquip!=="none"?"総重量<div style=\"font-size:9px;line-height:1;color:var(--t3);margin-top:1px\">バー含む</div>":"—"}</div><div class="sh">REP</div><div class="sh" style="font-size:9px;letter-spacing:0">チート</div><div class="sh" style="font-size:9px;letter-spacing:0">補助</div><div></div></div>
       <div id="setrows"></div>
       <button class="addsb" onclick="addSessSet()" style="padding:5px;height:32px">＋ セット追加</button>
-    </div>
-    <div id="sess-prev-rec" style="margin-top:4px"></div>`;
+    </div>`;
   const rmEl=document.getElementById("rm-target-area");
   if(rmEl)rmEl.innerHTML="";
   refreshSetRows();
