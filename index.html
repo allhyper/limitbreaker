@@ -137,14 +137,14 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
 .rest-timer-info.show{display:flex}
 .excard{background:linear-gradient(135deg,#1a1010,#111);border:0.5px solid rgba(232,89,60,.35);border-radius:11px;padding:9px;margin-bottom:6px;display:flex;flex-direction:column;flex:1;min-height:0}
 /* set grid: SET | KG | TOTAL | REPS | Cheat | Assist | Del */
-.shead3{display:grid;grid-template-columns:16px 1fr 38px 1fr 1fr 1fr 22px;gap:2px;align-items:center;margin-bottom:2px;flex-shrink:0}
-.srow3{display:grid;grid-template-columns:16px 1fr 38px 1fr 1fr 1fr 22px;gap:2px;align-items:center;margin-bottom:2px}
+.shead3{display:grid;grid-template-columns:18px 1fr 40px 1fr 36px 36px 24px;gap:3px;align-items:center;margin-bottom:2px;flex-shrink:0}
+.srow3{display:grid;grid-template-columns:18px 1fr 40px 1fr 36px 36px 24px;gap:3px;align-items:center;margin-bottom:2px}
 #setrows{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .srow3-note{margin-top:1px;margin-bottom:4px;padding-left:2px}
-.sh{font-size:17px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;text-align:center}
-.sn{font-family:var(--fd);font-size:24px;color:var(--t3);text-align:center}
-.si{background:var(--bg4);border:0.5px solid var(--b2);border-radius:4px;padding:4px 2px;font-family:var(--fd);font-size:22px;color:var(--te);text-align:center;width:100%;-moz-appearance:textfield}
-.si.si-kg{font-size:22px}
+.sh{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;text-align:center}
+.sn{font-family:var(--fd);font-size:13px;color:var(--t3);text-align:center}
+.si{background:var(--bg4);border:0.5px solid var(--b2);border-radius:4px;padding:4px 2px;font-family:var(--fd);font-size:18px;color:var(--te);text-align:center;width:100%;-moz-appearance:textfield}
+.si.si-kg{font-size:18px}
 .si:focus{outline:none;border-color:var(--ac);background:var(--bg3)}
 .si::-webkit-inner-spin-button,.si::-webkit-outer-spin-button{-webkit-appearance:none}
 .sinote{background:var(--bg4);border:0.5px solid var(--b2);border-radius:4px;padding:4px 3px;font-size:14px;color:var(--t2);width:100%;outline:none}
@@ -1273,21 +1273,21 @@ function renderSessEx(){
       const suggest=refRmVal>0?`<div style="margin-top:0">
         <div style="font-size:10px;color:var(--t3);margin-bottom:4px;letter-spacing:.8px">TODAY'S TARGET <span style="font-size:9px;opacity:.6">前回記録より算出・参考値</span></div>
         <div style="display:flex;gap:4px">
-          <div style="flex:1;background:var(--bld);border:0.5px solid rgba(59,139,212,.4);border-radius:8px;padding:6px;text-align:center">
-            <div style="font-size:10px;color:var(--bl);margin-bottom:2px">筋肥大 (80%)</div>
-            <div style="display:flex;align-items:baseline;justify-content:center;gap:3px">
-              <span style="font-family:var(--fd);font-size:18px;color:var(--bl);line-height:1">${fmtW(rec80)}</span>
-              <span style="font-size:10px;color:var(--t3)">×10</span>
+          <div style="flex:1;background:var(--bld);border:0.5px solid rgba(59,139,212,.4);border-radius:8px;padding:6px 8px">
+            <div style="font-size:10px;color:var(--bl);margin-bottom:3px">筋肥大 (80%)</div>
+            <div style="display:grid;grid-template-columns:4em 1fr;align-items:baseline;gap:2px;row-gap:1px">
+              <span style="font-size:10px;color:var(--t3)">総重量</span>
+              <span style="display:flex;align-items:baseline;gap:2px"><span style="font-family:var(--fd);font-size:17px;color:var(--bl);line-height:1">${fmtW(rec80)}</span><span style="font-size:10px;color:var(--t3)">×10</span></span>
+              ${showPlateTarget?`<span style="font-size:10px;color:var(--t3)">プレート</span><span style="font-family:var(--fd);font-size:17px;color:var(--bl);line-height:1">${fmtW(rec80Plate)}</span>`:'<span></span><span></span>'}
             </div>
-            ${showPlateTarget?`<div style="font-size:10px;color:var(--t3);margin-top:1px">板 ${fmtW(rec80Plate)}</div>`:""}
           </div>
-          <div style="flex:1;background:var(--acd);border:0.5px solid rgba(232,89,60,.4);border-radius:8px;padding:6px;text-align:center">
-            <div style="font-size:10px;color:var(--ac);margin-bottom:2px">筋力UP (85%)</div>
-            <div style="display:flex;align-items:baseline;justify-content:center;gap:3px">
-              <span style="font-family:var(--fd);font-size:18px;color:var(--ac);line-height:1">${fmtW(rec85)}</span>
-              <span style="font-size:10px;color:var(--t3)">×6</span>
+          <div style="flex:1;background:var(--acd);border:0.5px solid rgba(232,89,60,.4);border-radius:8px;padding:6px 8px">
+            <div style="font-size:10px;color:var(--ac);margin-bottom:3px">筋力UP (85%)</div>
+            <div style="display:grid;grid-template-columns:4em 1fr;align-items:baseline;gap:2px;row-gap:1px">
+              <span style="font-size:10px;color:var(--t3)">総重量</span>
+              <span style="display:flex;align-items:baseline;gap:2px"><span style="font-family:var(--fd);font-size:17px;color:var(--ac);line-height:1">${fmtW(rec85)}</span><span style="font-size:10px;color:var(--t3)">×6</span></span>
+              ${showPlateTarget?`<span style="font-size:10px;color:var(--t3)">プレート</span><span style="font-family:var(--fd);font-size:17px;color:var(--ac);line-height:1">${fmtW(rec85Plate)}</span>`:'<span></span><span></span>'}
             </div>
-            ${showPlateTarget?`<div style="font-size:10px;color:var(--t3);margin-top:1px">板 ${fmtW(rec85Plate)}</div>`:""}
           </div>
         </div>
       </div>`:'';
