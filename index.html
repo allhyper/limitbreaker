@@ -2895,15 +2895,27 @@ if(window.visualViewport){
     if(app){
       app.style.height=window.visualViewport.height+'px';
     }
+    // キーボード表示後、フォーカス中の入力欄をsetrows内でスクロールして表示
+    const active=document.activeElement;
+    const sr=document.getElementById('setrows');
+    if(sr&&active&&sr.contains(active)){
+      setTimeout(()=>{
+        const rowTop=active.closest('.srow3,.srow3-note')||active;
+        rowTop.scrollIntoView({block:'nearest',behavior:'smooth'});
+        window.scrollTo(0,0);
+      },100);
+    }
   });
-  window.visualViewport.addEventListener('scroll',e=>{e.preventDefault();window.scrollTo(0,0);},{passive:false});
 }
-// フォーカス時のscrollIntoView抑制（setrows内の入力欄のみ）
+// フォーカス時: window位置をリセットしつつsetrows内でスクロール表示
 document.addEventListener('focus',e=>{
   const sr=document.getElementById('setrows');
   if(sr&&sr.contains(e.target)){
-    // setrows内スクロールに任せてviewportスクロールさせない
-    setTimeout(()=>{window.scrollTo(0,0);},50);
+    setTimeout(()=>{
+      window.scrollTo(0,0);
+      const rowTop=e.target.closest('.srow3,.srow3-note')||e.target;
+      rowTop.scrollIntoView({block:'nearest',behavior:'instant'});
+    },150);
   }
 },true);
 </script>
