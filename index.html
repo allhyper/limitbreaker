@@ -120,18 +120,17 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
 .ex-nb:disabled{opacity:.2;cursor:not-allowed}
 .ex-name-big{font-family:var(--fd);font-size:30px;letter-spacing:1.5px;color:var(--te);flex:1;white-space:nowrap;overflow:hidden;text-align:center;line-height:1.1;height:1.1em;display:flex;align-items:center;justify-content:center}
 .ex-cnt{font-size:14px;color:var(--t3);flex-shrink:0;min-width:24px;text-align:right}
-/* REST行 → 下部固定バー */
-.rest-row{display:flex;align-items:stretch;gap:6px;flex-shrink:0;padding:8px 12px;border-top:0.5px solid var(--b);background:rgba(10,10,10,.98);padding-bottom:max(8px,env(safe-area-inset-bottom))}
-.rest-blk{background:var(--bg3);border:0.5px solid var(--b2);border-radius:7px;padding:5px 7px;display:flex;align-items:center;gap:4px;flex:1;align-self:stretch}
+/* REST行 → excard内上部 */
+.rest-row{flex-shrink:0;padding:6px 12px;border-top:0.5px solid var(--b);background:rgba(10,10,10,.98);padding-bottom:max(6px,env(safe-area-inset-bottom))}
+.rest-blk{background:var(--bg3);border:0.5px solid var(--b2);border-radius:7px;padding:5px 7px;display:flex;align-items:center;gap:4px;min-width:0}
 .rlbl{font-size:14px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;white-space:nowrap}
 .rval{font-family:var(--fd);font-size:20px;color:var(--bl);line-height:1;min-width:26px;text-align:center}
 .radj{width:30px;height:30px;background:var(--bg4);border:0.5px solid var(--b2);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);font-size:20px;flex-shrink:0;user-select:none}
 .rgo{background:var(--bl);border:none;border-radius:8px;padding:5px 14px;color:#fff;font-family:var(--fd);font-size:18px;letter-spacing:2px;cursor:pointer;flex-shrink:0;font-weight:700}
 .rgo:active{opacity:.8}
 .addexq{background:var(--god);border:0.5px solid rgba(242,166,35,.4);color:var(--go)}
-.rest-row .ex-act-btn,.rest-row .addexq{align-self:stretch;height:auto}
 /* タイマーインラインバー */
-.rest-timer-bar{display:none;height:4px;background:var(--bg4);border-radius:2px;margin-top:5px;overflow:hidden}
+.rest-timer-bar{display:none;height:4px;background:var(--bg4);border-radius:2px;margin-top:5px;margin-bottom:2px;overflow:hidden}
 .rest-timer-bar.show{display:block}
 .rest-timer-fill{height:100%;background:var(--bl);border-radius:2px;transition:width 1s linear}
 .rest-timer-info{display:none;align-items:center;justify-content:space-between;margin-top:3px}
@@ -151,7 +150,7 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
 .sinote{background:var(--bg4);border:0.5px solid var(--b2);border-radius:4px;padding:4px 3px;font-size:14px;color:var(--t2);width:100%;outline:none}
 .sinote:focus{border-color:var(--bl)}
 .sinote::placeholder{color:var(--t3)}
-.addsb{width:100%;padding:4px;background:none;border:0.5px dashed var(--b2);border-radius:5px;color:var(--t3);font-size:14px;cursor:pointer;margin-top:3px;display:flex;align-items:center;justify-content:center;gap:3px;flex-shrink:0}
+.addsb{width:100%;padding:7px;background:rgba(59,139,212,.1);border:0.5px solid rgba(59,139,212,.4);border-radius:7px;color:var(--bl);font-size:14px;cursor:pointer;margin-top:5px;display:flex;align-items:center;justify-content:center;gap:3px;flex-shrink:0;font-weight:600}
 .scheat{display:flex;align-items:center;justify-content:center}
 .scheat input[type=checkbox]{width:16px;height:16px;accent-color:var(--go);cursor:pointer;flex-shrink:0}
 .scheat input[type=checkbox]:checked+span{color:var(--go)}
@@ -463,30 +462,29 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
       <div class="ex-cnt" id="sess-ex-cnt">1/1</div>
     </div>
     <div id="rm-target-area" style="flex-shrink:0"></div>
-    <div id="sess-ex-area" style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column"></div>
-    <div class="rest-row">
-      <div style="flex:1">
-        <div class="rest-blk">
+    <div class="rest-row" style="flex-shrink:0;padding:6px 12px 4px;border-bottom:0.5px solid var(--b)">
+      <div style="display:flex;align-items:center;gap:5px">
+        <div class="rest-blk" style="flex:1">
           <div class="rlbl" id="sess-rl">REST</div>
           <div class="radj" onclick="adjRest(-15)">−</div>
           <div class="rval" id="sess-rv">90s</div>
           <div class="radj" onclick="adjRest(15)">＋</div>
           <button class="rgo" id="rest-go-btn" onclick="toggleInlineTimer()">GO</button>
         </div>
-        <div class="rest-timer-bar" id="rest-timer-bar"><div class="rest-timer-fill" id="rest-timer-fill" style="width:100%"></div></div>
-        <div class="rest-timer-info" id="rest-timer-info">
-          <span style="font-family:var(--fd);font-size:16px;color:var(--bl)" id="rest-timer-cnt">90</span>
-          <div style="display:flex;gap:6px">
-            <button style="font-size:12px;padding:2px 8px;background:var(--bld);border:0.5px solid rgba(59,139,212,.3);border-radius:5px;color:var(--bl);cursor:pointer" onclick="toggleInlineTimerPause()" id="rest-timer-pause">⏸</button>
-            <button style="font-size:12px;padding:2px 8px;background:var(--bg3);border:0.5px solid var(--b2);border-radius:5px;color:var(--t2);cursor:pointer" onclick="stopInlineTimer()">SKIP</button>
-          </div>
+        <button onclick="openQae()" style="height:36px;padding:0 10px;background:var(--god);border:0.5px solid rgba(242,166,35,.4);border-radius:6px;color:var(--go);font-size:12px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:3px;flex-shrink:0"><span style="font-size:15px;line-height:1">＋</span>種目追加</button>
+        <button onclick="delSessEx()" style="height:36px;padding:0 9px;background:rgba(232,89,60,.1);border:0.5px solid rgba(232,89,60,.3);border-radius:6px;color:rgba(232,89,60,.8);font-size:12px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:3px;flex-shrink:0">✕ 種目削除</button>
+      </div>
+      <div class="rest-timer-bar" id="rest-timer-bar"><div class="rest-timer-fill" id="rest-timer-fill" style="width:100%"></div></div>
+      <div class="rest-timer-info" id="rest-timer-info">
+        <span style="font-family:var(--fd);font-size:16px;color:var(--bl)" id="rest-timer-cnt">90</span>
+        <div style="display:flex;gap:6px">
+          <button style="font-size:12px;padding:2px 8px;background:var(--bld);border:0.5px solid rgba(59,139,212,.3);border-radius:5px;color:var(--bl);cursor:pointer" onclick="toggleInlineTimerPause()" id="rest-timer-pause">⏸</button>
+          <button style="font-size:12px;padding:2px 8px;background:var(--bg3);border:0.5px solid var(--b2);border-radius:5px;color:var(--t2);cursor:pointer" onclick="stopInlineTimer()">SKIP</button>
         </div>
       </div>
-      <div style="display:flex;gap:6px;align-items:stretch">
-        <button class="ex-act-btn" onclick="delSessEx()" style="background:var(--bg3);border:0.5px solid var(--b2);color:rgba(232,89,60,0.7)">✕ 種目削除</button>
-        <button class="ex-act-btn addexq" onclick="openQae()"><span style="font-size:15px;line-height:1">＋</span>種目追加</button>
-      </div>
     </div>
+    <div id="sess-ex-area" style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column"></div>
+
   </div>
 </div>
 
@@ -876,6 +874,13 @@ function saveSettingsBtn(){
   if(btn){const orig=btn.textContent;btn.textContent='✓';btn.style.background='var(--gr)';setTimeout(()=>{btn.textContent=orig;btn.style.background='var(--ac)'},1500);}
 }
 const fmtW=kg=>kg===0?'—':(settings.unit==='lb'?+(kg*2.20462).toFixed(1):kg)+(settings.unit==='lb'?'lb':'kg');
+// バー重量の唯一の計算関数（settings のみ参照）
+function getBarAdd(equip){
+  if(equip==='barbell') return (Number(settings.barbell)||20)+(Number(settings.collarBarbell)||0)*2;
+  if(equip==='ezbar')   return (Number(settings.ezbar)||10)+(Number(settings.collarEzbar)||0)*2;
+  if(equip==='dumbbell')return (Number(settings.dumbbell)||0)+(Number(settings.collarDumbbell)||0);
+  return 0;
+}
 const toKg=v=>settings.unit==='lb'?+(v/2.20462).toFixed(2):v;
 const toDisp=kg=>settings.unit==='lb'?+(kg*2.20462).toFixed(1):kg;
 
@@ -1054,7 +1059,7 @@ function renderTodayWorkout(todayRecs,el,expanded){
     const exRows=r.exercises.map(ex=>{
       const sets=ex.sets.filter(s=>parseInt(s.reps||0)>0);
       const eqp=ex.equip||'none';
-      const bAdd=eqp==='barbell'?(settings.barbell||20)+(settings.collarBarbell??0.5)*2:eqp==='ezbar'?(settings.ezbar||10)+(settings.collarEzbar??0.5)*2:eqp==='dumbbell'?((settings.dumbbell??2))+(settings.collarDumbbell??0):0;
+      const bAdd=getBarAdd(eqp);
       const maxKg=sets.length?Math.max(...sets.map(s=>s.kg||0)):0;
       const topSet=sets.find(s=>s.kg===maxKg);
       const exM=masterDB.find(e=>e.n===ex.n);
@@ -1209,20 +1214,16 @@ function renderSessEx(){
   });
   document.getElementById('sess-prev').disabled=session.idx===0;
   document.getElementById('sess-next').disabled=session.idx===total-1;
-  restSec=ex.restSec||settings.defaultRest||90;document.getElementById('sess-rv').textContent=restSec+'s';
+  restSec=ex.restSec||settings.defaultRest||90;const _rv=document.getElementById('sess-rv');if(_rv)_rv.textContent=restSec+'s';
   const nl='メモ';
   const exEquip=(ex.equip)||'none';
-  const barAdd=exEquip==='barbell'?(settings.barbell||20)+(settings.collarBarbell??settings.collar??0.5)*2:exEquip==='ezbar'?(settings.ezbar||10)+(settings.collarEzbar??settings.collar??0.5)*2:exEquip==='dumbbell'?((settings.dumbbell??2))+(settings.collarDumbbell??settings.collar??0):0;
+  const barAdd=getBarAdd(exEquip);
   document.getElementById('sess-ex-area').innerHTML=`
     <div class="excard">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px;gap:4px">
-        <div class="ex-name-big" style="font-size:clamp(11px,3vw,15px);text-align:left;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ex.n}</div>
-        <span style="font-size:13px;color:var(--t3)">${ex.sets.length} sets</span>
-      </div>
       <div id="sess-prev-rec" style="margin-top:4px"></div>
       <div class="shead3"><div class="sh">SET</div><div class="sh">${settings.unit==="lb"?"LBS":"KG"}<div style="font-size:9px;line-height:1;color:var(--t3);margin-top:1px">${exEquip==="barbell"?"プレート":exEquip==="dumbbell"?"片側":""}</div></div><div class="sh" style="font-size:11px;color:${exEquip!=="none"?"var(--bl)":"var(--b2)"}">${exEquip!=="none"?"総重量<div style=\"font-size:9px;line-height:1;color:var(--t3);margin-top:1px\">バー含む</div>":"—"}</div><div class="sh">REP</div><div class="sh" style="font-size:9px;letter-spacing:0">チート</div><div class="sh" style="font-size:9px;letter-spacing:0">補助</div><div></div></div>
       <div id="setrows"></div>
-      <button class="addsb" onclick="addSessSet()" style="padding:5px;height:32px">＋ セット追加</button>
+      <button class="addsb" onclick="addSessSet()">＋ セット追加</button>
     </div>`;
   const rmEl=document.getElementById("rm-target-area");
   if(rmEl)rmEl.innerHTML="";
@@ -1242,7 +1243,7 @@ function renderSessEx(){
       const dStr=`${d.getMonth()+1}/${d.getDate()}`;
       const setRows=prevEx.sets.filter(s=>parseInt(s.reps||0)>0).map(s=>{
         const eqp2=prevEx.equip||'none';
-        const bAdd2=eqp2==='barbell'?(settings.barbell||20)+(settings.collarBarbell??0.5)*2:eqp2==='ezbar'?(settings.ezbar||10)+(settings.collarEzbar??0.5)*2:eqp2==='dumbbell'?(((settings.dumbbell??2))+(settings.collarDumbbell??0))*2:0;
+        const bAdd2=getBarAdd(eqp2)*2;
         const tot=bAdd2>0?`${((s.kg||0)+bAdd2).toFixed(1).replace(/\.0$/,'')}kg`:`${s.kg||0}kg`;
         const cheatStr=parseInt(s.cheat||0)>0?` +${s.cheat}C`:'';
         const assistStr=parseInt(s.assist||0)>0?` -${s.assist}A`:'';
@@ -1257,7 +1258,7 @@ function renderSessEx(){
         const found=r.exercises.find(e=>e.n===exName);
         if(!found)continue;
         const eq=found.equip||'none';
-        const bA=eq==='barbell'?(settings.barbell||20)+(settings.collarBarbell??settings.collar??0.5)*2:eq==='ezbar'?(settings.ezbar||10)+(settings.collarEzbar??settings.collar??0.5)*2:eq==='dumbbell'?((settings.dumbbell??2))+(settings.collarDumbbell??settings.collar??0):0;
+        const bA=getBarAdd(eq);
         found.sets.filter(s=>parseInt(s.reps||0)>0).forEach(s=>{
           const tot=(s.kg||0)+(bA>0?bA:0);
           const rp=parseInt(s.reps||1);
@@ -1268,7 +1269,7 @@ function renderSessEx(){
 
       // 参考値：直前記録ベース
       const prevExEquip=(prevEx.equip)||"none";
-      const prevBarAdd=prevExEquip==="barbell"?(settings.barbell||20)+(settings.collarBarbell??settings.collar??0.5)*2:prevExEquip==="ezbar"?(settings.ezbar||10)+(settings.collarEzbar??settings.collar??0.5)*2:prevExEquip==="dumbbell"?((settings.dumbbell??2))+(settings.collarDumbbell??settings.collar??0):0;
+      const prevBarAdd=getBarAdd(prevExEquip);
       const maxKgPlate=Math.max(...prevEx.sets.map(s=>s.kg||0));
       const maxKgTotal=maxKgPlate+(prevBarAdd>0?prevBarAdd:0);
       const topReps=parseInt(prevEx.sets.find(s=>s.kg===maxKgPlate)?.reps||1);
@@ -1277,10 +1278,9 @@ function renderSessEx(){
       const rec85=refRmVal>0?Math.round(refRmVal*0.85*2)/2:0;
 
       const showPlateTarget=exEquip==='barbell'||exEquip==='ezbar';
-      const targetBar=Number(settings.barbell??20)||20;
-      const targetCollar=(Number(settings.collar??0.5)||0.5)*2;
-      const rec80Plate=Math.max(0,rec80-targetBar-targetCollar);
-      const rec85Plate=Math.max(0,rec85-targetBar-targetCollar);
+      const targetBarAdd=getBarAdd(exEquip);
+      const rec80Plate=Math.max(0,rec80-targetBarAdd);
+      const rec85Plate=Math.max(0,rec85-targetBarAdd);
 
       // 推定1RMバッジ（全記録最高値）
       const rmBadge=bestRmVal>0?`<span style="font-size:11px;color:var(--t3);margin-left:5px">推定1RM <span style="font-family:var(--fd);font-size:13px;color:var(--go)">${bestRmVal}kg</span></span>`:'';
@@ -1333,7 +1333,7 @@ function refreshSetRows(){
   const ex=session.exs[session.idx];
   const canDel=ex.sets.length>1;
   const eqp=(ex.equip)||'none';
-  const bAdd=eqp==='barbell'?(settings.barbell||20)+(settings.collarBarbell??settings.collar??0.5)*2:eqp==='ezbar'?(settings.ezbar||10)+(settings.collarEzbar??settings.collar??0.5)*2:eqp==='dumbbell'?((settings.dumbbell??2))+(settings.collarDumbbell??settings.collar??0):0;
+  const bAdd=getBarAdd(eqp);
   document.getElementById('setrows').innerHTML=ex.sets.map((s,i)=>{
     const plate=s.kg?toDisp(s.kg):0;
     const total=bAdd>0?(+plate+bAdd).toFixed(1).replace(/\.0$/,''):'';
@@ -1387,7 +1387,7 @@ function updateSet(i,key,val){
   if(key==='kg'){
     const ex=session.exs[session.idx];
     const eqp=(ex.equip)||'none';
-    const bAdd=eqp==='barbell'?(settings.barbell||20)+(settings.collarBarbell??settings.collar??0.5)*2:eqp==='ezbar'?(settings.ezbar||10)+(settings.collarEzbar??settings.collar??0.5)*2:eqp==='dumbbell'?((settings.dumbbell??2))+(settings.collarDumbbell??settings.collar??0):0;
+    const bAdd=getBarAdd(eqp);
     const rows=document.querySelectorAll('#setrows .set-data-row');
     if(rows[i]){
       const plate=val?toDisp(val):0;
@@ -1448,7 +1448,7 @@ function delSessSet(i){
   ex.sets.splice(i,1);
   refreshSetRows();
 }
-function adjRest(d){restSec=Math.max(15,Math.min(300,restSec+d));document.getElementById('sess-rv').textContent=restSec+'s';if(session)session.exs[session.idx].restSec=restSec}
+function adjRest(d){restSec=Math.max(15,Math.min(300,restSec+d));const rv=document.getElementById('sess-rv');if(rv)rv.textContent=restSec+'s';if(session)session.exs[session.idx].restSec=restSec}
 
 function openQae(){qaeF='';renderQaeFilter();renderQaeList();openModal('qae-pop')}
 function renderQaeFilter(){document.getElementById('qae-filter').innerHTML=MUSCLES.map(m=>`<div class="mfb ${(m==='全て'&&qaeF==='')||m===qaeF?'on':''}" onclick="setQaeF('${m==='全て'?'':m}')" style="font-size:13px;padding:2px 6px">${m==='全て'?'全て':MUSCLES_JP[m]||m}</div>`).join('')}
@@ -1536,19 +1536,19 @@ function saveAndGoHome(){
 
 /* ═══ INLINE TIMER ═══ */
 let _audioCtx=null;
-function getAudioCtx(){
+async function getAudioCtx(){
   const AC=window.AudioContext||window.webkitAudioContext;
   if(!AC)throw new Error("AudioContext not supported");
   if(!_audioCtx)_audioCtx=new AC();
-  if(_audioCtx.state==="suspended")_audioCtx.resume();
+  if(_audioCtx.state==="suspended")await _audioCtx.resume();
   return _audioCtx;
 }
-let inlineTimerI=null,inlineTimerCur=0,inlineTimerTot=0,inlineTimerRunning=false,inlineTimerEnd=0;
+let inlineTimerI=null,inlineTimerCur=0,inlineTimerTot=0,inlineTimerRunning=false,inlineTimerEnd=0,_alarmFired=false;
 function toggleInlineTimer(){
   if(inlineTimerRunning||inlineTimerCur>0){stopInlineTimer();return;}
   try{getAudioCtx();}catch(e){}
   if(Notification&&Notification.permission==='default')Notification.requestPermission();
-  inlineTimerCur=restSec;inlineTimerTot=restSec;inlineTimerRunning=true;
+  inlineTimerCur=restSec;inlineTimerTot=restSec;inlineTimerRunning=true;_alarmFired=false;
   inlineTimerEnd=Date.now()+restSec*1000;
   const bar=document.getElementById('rest-timer-bar');
   const info=document.getElementById('rest-timer-info');
@@ -1557,11 +1557,11 @@ function toggleInlineTimer(){
   if(info)info.classList.add('show');
   if(btn){btn.textContent='■';btn.style.background='var(--ac)';}
   updateInlineBar(inlineTimerCur,inlineTimerTot);
-  document.getElementById('rest-timer-cnt').textContent=inlineTimerCur;
+  const cntEl=document.getElementById('rest-timer-cnt');if(cntEl)cntEl.textContent=inlineTimerCur;
   startInlineTI();
 }
 function stopInlineTimer(){
-  clearInterval(inlineTimerI);inlineTimerRunning=false;inlineTimerCur=0;inlineTimerEnd=0;
+  clearInterval(inlineTimerI);inlineTimerRunning=false;inlineTimerCur=0;inlineTimerEnd=0;_alarmFired=false;
   const bar=document.getElementById('rest-timer-bar');
   const info=document.getElementById('rest-timer-info');
   const btn=document.getElementById('rest-go-btn');
@@ -1586,11 +1586,10 @@ function updateInlineBar(cur,tot){
 function startInlineTI(){
   clearInterval(inlineTimerI);
   inlineTimerI=setInterval(()=>{
-    // 時間補正：実経過時間ベース
     inlineTimerCur=Math.max(0,Math.round((inlineTimerEnd-Date.now())/1000));
-    document.getElementById('rest-timer-cnt').textContent=inlineTimerCur;
+    const _c=document.getElementById('rest-timer-cnt');if(_c)_c.textContent=inlineTimerCur;
     updateInlineBar(inlineTimerCur,inlineTimerTot);
-    if(inlineTimerCur<=0){clearInterval(inlineTimerI);playAlarm();_notifyTimerEnd();setTimeout(stopInlineTimer,1200);}
+    if(inlineTimerCur<=0){clearInterval(inlineTimerI);if(!_alarmFired){_alarmFired=true;playAlarm();_notifyTimerEnd();}setTimeout(stopInlineTimer,1200);}
   },500);
 }
 function _notifyTimerEnd(){
@@ -1602,9 +1601,16 @@ function _notifyTimerEnd(){
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible'&&inlineTimerRunning&&inlineTimerEnd>0){
     inlineTimerCur=Math.max(0,Math.round((inlineTimerEnd-Date.now())/1000));
-    document.getElementById('rest-timer-cnt').textContent=inlineTimerCur;
+    const _c=document.getElementById('rest-timer-cnt');if(_c)_c.textContent=inlineTimerCur;
     updateInlineBar(inlineTimerCur,inlineTimerTot);
-    if(inlineTimerCur<=0){clearInterval(inlineTimerI);playAlarm();_notifyTimerEnd();setTimeout(stopInlineTimer,1200);}
+    if(inlineTimerCur<=0){
+      clearInterval(inlineTimerI);
+      if(!_alarmFired){_alarmFired=true;playAlarm();_notifyTimerEnd();}
+      setTimeout(stopInlineTimer,1200);
+    }else{
+      // intervalがバックグラウンドで止まっている場合に再起動
+      startInlineTI();
+    }
   }
 });
 function setTimerSound(id){settings.timerSound=id;S.set('settings',settings);renderSettings();}
@@ -1614,7 +1620,6 @@ function playAlarm(){
   if(sound==='off'){if(navigator.vibrate)navigator.vibrate([200,100,200,100,400]);return;}
   if(sound!=='beep'){
     try{
-      // やる気を喚起するフレーズ（複数からランダム）
       const phrases={
         go:['Go!','Go! Go! Go!','Come on, Go!'],
         herewego:['Here we go!','Here we GO, let\'s crush it!','Here we go, push hard!'],
@@ -1625,10 +1630,9 @@ function playAlarm(){
       const msg=list[Math.floor(Math.random()*list.length)];
       const u=new SpeechSynthesisUtterance(msg);
       u.lang='en-US';
-      u.rate=1.1;  // 少し速く＝テンション高め
+      u.rate=1.1;
       u.pitch=settings.timerVoiceGender==='male'?0.7:1.2;
       u.volume=1;
-      // バックグラウンド対策：voicesが読み込まれてから実行
       const speak=()=>{
         const voices=window.speechSynthesis.getVoices();
         if(voices.length>0){
@@ -1639,6 +1643,7 @@ function playAlarm(){
           if(genVoices.length>0)u.voice=genVoices[0];
           else if(lang.length>0)u.voice=lang[0];
         }
+        if(window.speechSynthesis.paused)window.speechSynthesis.resume();
         window.speechSynthesis.cancel();
         window.speechSynthesis.speak(u);
       };
@@ -1648,8 +1653,8 @@ function playAlarm(){
     if(navigator.vibrate)navigator.vibrate([100,50,100,50,200]);
     return;
   }
-  try{
-    const ctx=getAudioCtx();
+  // beep: AudioContext.resume() は非同期なので .then() で待ってから鳴らす
+  getAudioCtx().then(ctx=>{
     const playBeepSet=(offset=0)=>{
       const beep=(freq,start,dur)=>{
         const o=ctx.createOscillator();const g=ctx.createGain();
@@ -1664,32 +1669,39 @@ function playAlarm(){
     };
     playBeepSet(0);
     setTimeout(()=>{try{playBeepSet(0);}catch(e){}},800);
-  }catch(e){}
+  }).catch(()=>{});
   if(navigator.vibrate)navigator.vibrate([200,100,200,100,400]);
 }
 function updateRing(c,tot){const r=document.getElementById('tring');if(r){r.style.strokeDashoffset=251*(1-c/tot);r.style.stroke=c<20?'#E8593C':'#3B8BD4';}}
 
 /* ═══ STATS ═══ */
+function getFilteredRecords(){
+  const now=new Date();
+  if(statsP==='day'){const tk=dateKey(now);return records.filter(r=>dateKey(r.date)===tk);}
+  if(statsP==='week'){const w=new Date(now);w.setDate(now.getDate()-7);return records.filter(r=>new Date(r.date)>=w);}
+  if(statsP==='month'){
+    const td=new Date(now.getFullYear(),now.getMonth()+statsMonthOffset,1);
+    const ms=new Date(td.getFullYear(),td.getMonth(),1),me=new Date(td.getFullYear(),td.getMonth()+1,0,23,59,59);
+    return records.filter(r=>{const d=new Date(r.date);return d>=ms&&d<=me;});
+  }
+  if(statsP==='year'){const y=new Date(now.getFullYear(),0,1);return records.filter(r=>new Date(r.date)>=y);}
+  return records; // 'all'
+}
 function renderStats(){
   const periods=['日','週','月','年','累計'];const pkeys=['day','week','month','year','all'];
   document.getElementById('stats-ptabs').innerHTML=periods.map((p,i)=>`<div class="pt ${pkeys[i]===statsP?'on':''}" onclick="setStatsP('${pkeys[i]}')">${p}</div>`).join('');
   const now=new Date();
-  let filtered=records;
+  let filtered=getFilteredRecords();
   // 月ナビゲーション
   const mnEl=document.getElementById('stats-month-nav');
   if(statsP==='month'){
     const targetDate=new Date(now.getFullYear(),now.getMonth()+statsMonthOffset,1);
     const y=targetDate.getFullYear(),m=targetDate.getMonth();
-    const ms=new Date(y,m,1),me=new Date(y,m+1,0,23,59,59);
-    filtered=records.filter(r=>{const d=new Date(r.date);return d>=ms&&d<=me});
     const label=`${y}年${m+1}月`;
     const isCurrentMonth=(y===now.getFullYear()&&m===now.getMonth());
     if(mnEl)mnEl.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:8px;flex-shrink:0"><button onclick="adjStatsMonth(-1)" style="width:28px;height:28px;background:var(--bg3);border:0.5px solid var(--b2);border-radius:6px;color:var(--t2);font-size:16px;cursor:pointer">‹</button><span style="font-family:var(--fd);font-size:16px;color:var(--te);letter-spacing:1px">${label}</span><button onclick="adjStatsMonth(1)" style="width:28px;height:28px;background:var(--bg3);border:0.5px solid var(--b2);border-radius:6px;color:${isCurrentMonth?'var(--b2)':'var(--t2)'};font-size:16px;cursor:pointer" ${isCurrentMonth?'disabled':''}>›</button></div>`;
   }else{
     if(mnEl)mnEl.innerHTML='';
-    if(statsP==='day'){const tk=dateKey(now);filtered=records.filter(r=>dateKey(r.date)===tk)}
-    else if(statsP==='week'){const w=new Date(now);w.setDate(now.getDate()-7);filtered=records.filter(r=>new Date(r.date)>=w)}
-    else if(statsP==='year'){const y=new Date(now.getFullYear(),0,1);filtered=records.filter(r=>new Date(r.date)>=y)}
   }
   const vol=Math.round(filtered.reduce((a,r)=>a+r.totalVol,0));
   const sets=filtered.reduce((a,r)=>r.exercises.reduce((b,ex)=>b+ex.sets.length,a),0);
@@ -1725,7 +1737,7 @@ function renderStats(){
   const exStats=Object.values(exStatsMap).sort((a,b)=>b.vol-a.vol).slice(0,8);
   const exEl=document.getElementById('ex-stats-list');
   if(exEl)exEl.innerHTML=exStats.length?exStats.map((e,ei)=>`
-    <div class="ex-stat-row" onclick="toggleExGraph(${ei})">
+    <div class="ex-stat-row" data-exname="${e.name}" onclick="toggleExGraph(${ei})">
       <div style="flex:1;min-width:0">
         <div class="ex-stat-name">${e.name}</div>
         <div style="font-size:13px;color:var(--t3);margin-top:1px">最高 ${fmtW(e.maxKg)} × ${e.maxSets}set</div>
@@ -1948,31 +1960,24 @@ let openExGraphs=new Set();
 function toggleExGraphByName(name){
   const rows=document.querySelectorAll('#ex-stats-list .ex-stat-row');
   let foundIdx=-1;
-  rows.forEach((r,i)=>{if(r.querySelector('.ex-stat-name')?.textContent===name)foundIdx=i;});
+  rows.forEach((r,i)=>{if(r.dataset.exname===name)foundIdx=i;});
   if(foundIdx>=0){openExGraphs.delete(foundIdx);toggleExGraph(foundIdx);}
 }
 function toggleExGraph(idx){
   const el=document.getElementById('exg-'+idx);if(!el)return;
-  // 種目名をDOMから取得（該当行のex-stat-nameから）
-  const rows=document.querySelectorAll('#ex-stats-list .ex-stat-row');
-  const name=rows[idx]?.querySelector('.ex-stat-name')?.textContent||'';
+  const row=document.querySelectorAll('#ex-stats-list .ex-stat-row')[idx];
+  const name=row?.dataset.exname||'';
   const isOpen=openExGraphs.has(idx);
   if(isOpen){openExGraphs.delete(idx);el.style.display='none';return;}
   openExGraphs.add(idx);el.style.display='block';
 
   // 期間フィルタ
-  const now=new Date();
-  let src=records;
-  if(statsP==='day'){const tk=dateKey(now);src=records.filter(r=>dateKey(r.date)===tk)}
-  else if(statsP==='week'){const w=new Date(now);w.setDate(now.getDate()-7);src=records.filter(r=>new Date(r.date)>=w)}
-  else if(statsP==='month'){const m=new Date(now.getFullYear(),now.getMonth(),1);src=records.filter(r=>new Date(r.date)>=m)}
-  else if(statsP==='year'){const y=new Date(now.getFullYear()-4,0,1);src=records.filter(r=>new Date(r.date)>=y)}
+  const src=getFilteredRecords();
 
   // 期間に応じたグルーピングキー
   function groupKey(dateStr){
     const d=new Date(dateStr);
     if(statsP==='year')return`${d.getFullYear()}/${d.getMonth()+1}`;
-    if(statsP==='month')return`${d.getMonth()+1}/${d.getDate()}`;
     return`${d.getMonth()+1}/${d.getDate()}`;
   }
   function groupLabel(k){return k;}
@@ -2014,8 +2019,9 @@ function toggleExGraph(idx){
       xSlots.push({key:k,label:wd});
     }
   } else if(statsP==='month'){
-    // 今月1日〜末日
-    const y=now2.getFullYear(),m=now2.getMonth();
+    // 表示月（オフセット対応）の1日〜末日
+    const tgt=new Date(now2.getFullYear(),now2.getMonth()+statsMonthOffset,1);
+    const y=tgt.getFullYear(),m=tgt.getMonth();
     const dim=new Date(y,m+1,0).getDate();
     for(let d=1;d<=dim;d++){
       const k=`${m+1}/${d}`;
@@ -2242,7 +2248,7 @@ function renderHomeCalDet(){
       const exM2a=masterDB.find(e=>e.n===ex.n);const mc2a=exM2a?.machine?0.9:1.0;const rm=maxKg>0?Math.round(maxKg*(1+parseInt(topSet.reps||1)/30)*mc2a):0;
       const rows=displaySets.map((s,si)=>{
         const eqp=ex.equip||'none';
-        const bAdd=eqp==='barbell'?(settings.barbell||20)+(settings.collarBarbell??0.5)*2:eqp==='ezbar'?(settings.ezbar||10)+(settings.collarEzbar??0.5)*2:eqp==='dumbbell'?((settings.dumbbell??2))+(settings.collarDumbbell??0):0;
+        const bAdd=getBarAdd(eqp);
         const tot=bAdd>0?((s.kg||0)+bAdd).toFixed(1).replace(/\.0$/,''):s.kg||0;
         const rp=parseInt(s.reps||0);
         const vol=Math.round((s.kg||0)*rp);
@@ -2345,7 +2351,7 @@ function renderCalDet(){
         </tr></thead>
         <tbody>${displaySets.map((s,si)=>{
           const eqp=ex.equip||'none';
-          const bAdd=eqp==='barbell'?(settings.barbell||20)+(settings.collarBarbell??0.5)*2:eqp==='ezbar'?(settings.ezbar||10)+(settings.collarEzbar??0.5)*2:eqp==='dumbbell'?((settings.dumbbell??2))+(settings.collarDumbbell??0):0;
+          const bAdd=getBarAdd(eqp);
           const tot=bAdd>0?((s.kg||0)+bAdd).toFixed(1).replace(/\.0$/,''):s.kg||0;
           const rp=parseInt(s.reps||0);
           const vol=Math.round((s.kg||0)*rp);
@@ -2836,9 +2842,9 @@ function renderSettings(){
   const bbEl=document.getElementById('set-barbell');if(bbEl)bbEl.value=settings.barbell??20;
   const ezEl=document.getElementById('set-ezbar');if(ezEl)ezEl.value=settings.ezbar??10;
   const db2El=document.getElementById('set-dumbbell');if(db2El)db2El.value=settings.dumbbell??2;
-  const colBBEl=document.getElementById('set-collar-barbell');if(colBBEl)colBBEl.value=settings.collarBarbell??settings.collar??0.5;
-  const colEZEl=document.getElementById('set-collar-ezbar');if(colEZEl)colEZEl.value=settings.collarEzbar??settings.collar??0.5;
-  const colDBEl=document.getElementById('set-collar-dumbbell');if(colDBEl)colDBEl.value=settings.collarDumbbell??settings.collar??0.5;
+  const colBBEl=document.getElementById('set-collar-barbell');if(colBBEl)colBBEl.value=settings.collarBarbell??0.5;
+  const colEZEl=document.getElementById('set-collar-ezbar');if(colEZEl)colEZEl.value=settings.collarEzbar??0.5;
+  const colDBEl=document.getElementById('set-collar-dumbbell');if(colDBEl)colDBEl.value=settings.collarDumbbell??0;
   // vol settings
   const vr=document.getElementById('vol-reps');if(vr)vr.checked=settings.volReps!==false;
   const vc=document.getElementById('vol-cheat');if(vc)vc.checked=!!settings.volCheat;
