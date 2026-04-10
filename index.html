@@ -2309,14 +2309,10 @@ function renderHomeCalDet(){
 }
 function loadRecordToSession(globalIdx){
   const r=records[globalIdx];if(!r)return;
-  if(session&&!confirm('現在のワークアウト記録は保存されません。続行しますか？'))return;
   // IDがなければ付与
   if(!r._id)r._id='r'+Math.random().toString(36).slice(2);
   // 重量・回数・メモをすべて引き継ぐ（再開/修正モード）
-  sessExercises=r.exercises.map(ex=>({
-    ...ex,
-    sets:ex.sets.map(s=>({kg:s.kg,reps:s.reps||'',note:s.note||'',done:s.done||false,cheat:s.cheat||false}))
-  }));
+  sessExercises=JSON.parse(JSON.stringify(r.exercises));
   sessIdx=0;sessName=r.progName||'ワークアウト';sessStart=Date.now();
   // 累積時間：前回のelapsedを引き継いでstartを過去にオフセット
   const prevElapsed=(r.elapsed||0)*60000;
