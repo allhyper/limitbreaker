@@ -11,10 +11,15 @@
 <link rel="manifest" href="manifest.json">
 <title>LimitBreaker</title>
 <script>
+let _swReg=null;
 if("serviceWorker" in navigator){
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/limitbreaker/sw.js");
+    navigator.serviceWorker.register("/limitbreaker/sw.js").then(reg=>{_swReg=reg;}).catch(()=>{});
   });
+}
+function _postSW(msg){
+  if(_swReg&&_swReg.active){_swReg.active.postMessage(msg);return;}
+  navigator.serviceWorker.ready.then(reg=>{_swReg=reg;if(reg.active)reg.active.postMessage(msg);}).catch(()=>{});
 }
 </script>
 
@@ -1477,8 +1482,15 @@ function addExToSess(mid){
 }
 
 function cancelSession(){
-  const hasInput=session&&session.exs&&session.exs.some(ex=>ex.sets&&ex.sets.some(s=>parseInt(s.reps||0)>0));
-  if(hasInput){openModal('cancel-session-confirm-modal');return;}
+  // session.exsの入力チェック（kg or reps）
+  const sessionHasInput=session&&session.exs&&session.exs.some(ex=>ex.sets&&ex.sets.some(s=>{
+    const kg=parseFloat(s.kg||0);
+    const reps=parseInt(s.reps||0);
+    return kg>0||reps>0;
+  }));
+  // DOMのinput要素も直接確認（oninputより先に判定される場合の保険）
+  const domHasInput=Array.from(document.querySelectorAll('#setrows .si')).some(inp=>parseFloat(inp.value||0)>0);
+  if(sessionHasInput||domHasInput){openModal('cancel-session-confirm-modal');return;}
   _doCancelSession();
 }
 function confirmCancelSession(){
@@ -1582,7 +1594,15 @@ function toggleInlineTimer(){
 }
 function _scheduleBgNotify(sec){
   if(_bgNotifyTO){clearTimeout(_bgNotifyTO);_bgNotifyTO=null;}
+  // SW側タイマーもキャンセル
+  _postSW({type:'CANCEL_TIMER'});
   if(!sec||sec<=0)return;
+  const delayMs=sec*1000+300;
+  // SW側でバックグラウンド通知をスケジュール（最も確実）
+  if(Notification&&Notification.permission==='granted'){
+    _postSW({type:'SCHEDULE_TIMER',delayMs,body:'レスト終了！次のセットを開始してください'});
+  }
+  // フォールバック：ページ側setTimeoutでも仕掛ける
   _bgNotifyTO=setTimeout(()=>{
     _bgNotifyTO=null;
     if(!_alarmFired){
@@ -1590,12 +1610,12 @@ function _scheduleBgNotify(sec){
       _notifyTimerEnd();
       if(document.visibilityState==='visible')playAlarm();
     }
-  },sec*1000+300);
+  },delayMs);
 }
 function stopInlineTimer(){
   clearInterval(inlineTimerI);
   if(_bgNotifyTO){clearTimeout(_bgNotifyTO);_bgNotifyTO=null;}
-  inlineTimerRunning=false;inlineTimerCur=0;inlineTimerEnd=0;_alarmFired=false;
+  _postSW({type:'CANCEL_TIMER'});inlineTimerRunning=false;inlineTimerCur=0;inlineTimerEnd=0;_alarmFired=false;
   const bar=document.getElementById('rest-timer-bar');
   const info=document.getElementById('rest-timer-info');
   const btn=document.getElementById('rest-go-btn');
@@ -1612,7 +1632,7 @@ function toggleInlineTimerPause(){
     inlineTimerEnd=Date.now()+inlineTimerCur*1000;
     _scheduleBgNotify(inlineTimerCur);
     if(pb)pb.textContent='⏸';startInlineTI();
-  }else{if(pb)pb.textContent='▶';clearInterval(inlineTimerI);if(_bgNotifyTO){clearTimeout(_bgNotifyTO);_bgNotifyTO=null;}}
+  }else{if(pb)pb.textContent='▶';clearInterval(inlineTimerI);if(_bgNotifyTO){clearTimeout(_bgNotifyTO);_bgNotifyTO=null;}_postSW({type:'CANCEL_TIMER'});}
 }
 function updateInlineBar(cur,tot){
   const fill=document.getElementById('rest-timer-fill');
