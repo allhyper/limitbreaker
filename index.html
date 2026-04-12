@@ -1574,12 +1574,15 @@ async function getAudioCtx(){
   if(_audioCtx.state==="suspended")await _audioCtx.resume();
   return _audioCtx;
 }
-let inlineTimerI=null,inlineTimerCur=0,inlineTimerTot=0,inlineTimerRunning=false,inlineTimerEnd=0,_alarmFired=false,_bgNotifyTO=null;
+// ─── INLINE TIMER ───
+// 終了判定は「0になった瞬間のvisibility」だけで行う。
+// 復帰時に音は鳴らさない。SWはタイマーを持たず通知のみ担当。
+let inlineTimerI=null,inlineTimerCur=0,inlineTimerTot=0,inlineTimerRunning=false,inlineTimerEnd=0,_alarmFired=false;
+
 function toggleInlineTimer(){
   if(inlineTimerRunning||inlineTimerCur>0){stopInlineTimer();return;}
   try{getAudioCtx();}catch(e){}
-  if(Notification&&Notification.permission==='default')Notification.requestPermission().then(()=>{_scheduleBgNotify(restSec);});
-  else{_scheduleBgNotify(restSec);}
+  if(Notification&&Notification.permission==='default')Notification.requestPermission();
   inlineTimerCur=restSec;inlineTimerTot=restSec;inlineTimerRunning=true;_alarmFired=false;
   inlineTimerEnd=Date.now()+restSec*1000;
   const bar=document.getElementById('rest-timer-bar');
@@ -1592,30 +1595,9 @@ function toggleInlineTimer(){
   const cntEl=document.getElementById('rest-timer-cnt');if(cntEl)cntEl.textContent=inlineTimerCur;
   startInlineTI();
 }
-function _scheduleBgNotify(sec){
-  if(_bgNotifyTO){clearTimeout(_bgNotifyTO);_bgNotifyTO=null;}
-  // SW側タイマーもキャンセル
-  _postSW({type:'CANCEL_TIMER'});
-  if(!sec||sec<=0)return;
-  const delayMs=sec*1000+300;
-  // SW側でバックグラウンド通知をスケジュール（最も確実）
-  if(Notification&&Notification.permission==='granted'){
-    _postSW({type:'SCHEDULE_TIMER',delayMs,body:'レスト終了！次のセットを開始してください'});
-  }
-  // フォールバック：ページ側setTimeoutでも仕掛ける
-  _bgNotifyTO=setTimeout(()=>{
-    _bgNotifyTO=null;
-    if(!_alarmFired){
-      _alarmFired=true;
-      _notifyTimerEnd();
-      if(document.visibilityState==='visible')playAlarm();
-    }
-  },delayMs);
-}
 function stopInlineTimer(){
   clearInterval(inlineTimerI);
-  if(_bgNotifyTO){clearTimeout(_bgNotifyTO);_bgNotifyTO=null;}
-  _postSW({type:'CANCEL_TIMER'});inlineTimerRunning=false;inlineTimerCur=0;inlineTimerEnd=0;_alarmFired=false;
+  inlineTimerRunning=false;inlineTimerCur=0;inlineTimerEnd=0;_alarmFired=false;
   const bar=document.getElementById('rest-timer-bar');
   const info=document.getElementById('rest-timer-info');
   const btn=document.getElementById('rest-go-btn');
@@ -1630,13 +1612,24 @@ function toggleInlineTimerPause(){
   const pb=document.getElementById('rest-timer-pause');
   if(inlineTimerRunning){
     inlineTimerEnd=Date.now()+inlineTimerCur*1000;
-    _scheduleBgNotify(inlineTimerCur);
     if(pb)pb.textContent='⏸';startInlineTI();
-  }else{if(pb)pb.textContent='▶';clearInterval(inlineTimerI);if(_bgNotifyTO){clearTimeout(_bgNotifyTO);_bgNotifyTO=null;}_postSW({type:'CANCEL_TIMER'});}
+  }else{if(pb)pb.textContent='▶';clearInterval(inlineTimerI);}
 }
 function updateInlineBar(cur,tot){
   const fill=document.getElementById('rest-timer-fill');
   if(fill){fill.style.width=(tot>0?Math.max(cur/tot*100,0):0)+'%';fill.style.background=cur<=3?'var(--ac)':'var(--bl)';}
+}
+function _fireAlarm(){
+  // 0になった瞬間のvisibilityで判定・1回だけ発火
+  if(_alarmFired)return;
+  _alarmFired=true;
+  if(document.visibilityState==='visible'){
+    // フォアグラウンド：音のみ
+    playAlarm();
+  }else{
+    // バックグラウンド：通知のみ（SW経由）
+    _postSW({type:'NOTIFY_NOW',body:'レスト終了！次のセットを開始してください'});
+  }
 }
 function startInlineTI(){
   clearInterval(inlineTimerI);
@@ -1644,30 +1637,22 @@ function startInlineTI(){
     inlineTimerCur=Math.max(0,Math.round((inlineTimerEnd-Date.now())/1000));
     const _c=document.getElementById('rest-timer-cnt');if(_c)_c.textContent=inlineTimerCur;
     updateInlineBar(inlineTimerCur,inlineTimerTot);
-    if(inlineTimerCur<=0){clearInterval(inlineTimerI);if(!_alarmFired){_alarmFired=true;playAlarm();_notifyTimerEnd();}setTimeout(stopInlineTimer,1200);}
+    if(inlineTimerCur<=0){clearInterval(inlineTimerI);_fireAlarm();setTimeout(stopInlineTimer,1200);}
   },500);
 }
-function _notifyTimerEnd(){
-  // SW経由で通知（tagをユニークにして毎回表示）
-  _postSW({type:'NOTIFY_NOW',body:'レスト終了！次のセットを開始してください'});
-  // SWが使えない場合のフォールバック
-  if(Notification&&Notification.permission==='granted'){
-    try{new Notification('LimitBreaker ⏱',{body:'レスト終了！次のセットを開始してください',icon:'/limitbreaker/icon-192.png',tag:'rest-end-'+Date.now(),requireInteraction:true,vibrate:[300,100,300,100,500]});}catch(e){}
-  }
-}
-// バックグラウンドから復帰時に時間を補正
+// 復帰時：表示補正のみ。音・通知は鳴らさない。
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible'&&inlineTimerRunning&&inlineTimerEnd>0){
     inlineTimerCur=Math.max(0,Math.round((inlineTimerEnd-Date.now())/1000));
     const _c=document.getElementById('rest-timer-cnt');if(_c)_c.textContent=inlineTimerCur;
     updateInlineBar(inlineTimerCur,inlineTimerTot);
-    if(inlineTimerCur<=0){
-      clearInterval(inlineTimerI);
-      if(!_alarmFired){_alarmFired=true;playAlarm();_notifyTimerEnd();}
-      setTimeout(stopInlineTimer,1200);
-    }else{
-      // intervalがバックグラウンドで止まっている場合に再起動
+    if(inlineTimerCur>0){
+      // まだ時間が残っている → intervalを再起動（バックグラウンドでスロットルされた場合の補正）
       startInlineTI();
+    }else{
+      // すでに0過ぎ → 何もしない（_fireAlarmはsetIntervalが0を検知した瞬間に発火済み or BG通知済み）
+      clearInterval(inlineTimerI);
+      setTimeout(stopInlineTimer,0);
     }
   }
 });
