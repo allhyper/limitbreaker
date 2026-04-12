@@ -2873,7 +2873,8 @@ function renderSettings(){
   const vc=document.getElementById('vol-cheat');if(vc)vc.checked=!!settings.volCheat;
   const va=document.getElementById('vol-assist');if(va)va.checked=!!settings.volAssist;
   // timer sound
-  const SOUNDS=[{id:'off',l:'🔕 オフ'},{id:'beep',l:'🔔 ビープ音'},{id:'go',l:'🗣 "Go!"'},{id:'herewego',l:'🗣 "Here we go!"'},{id:'letsgo',l:"🗣 \"Let's go!\""},{id:'letsdothis',l:'🗣 "Go for it!" / "Ready, go!"'}];
+  const gender=settings.timerVoiceGender||'female';
+  const SOUNDS=[{id:'off',l:'🔕 オフ'},{id:'beep',l:'🔔 ビープ音'},{id:'go',l:'🗣 "Go!"'},{id:'herewego',l:'🗣 "Here we go!"'},{id:'letsgo',l:"🗣 \"Let's go!\""},{id:'letsdothis',l:gender==='male'?'🗣 "Go for it!"':'🗣 "Ready, go!"'}];
   const tsEl=document.getElementById('timer-sound-btns');
   if(tsEl)tsEl.innerHTML=`
     <div style="display:flex;gap:6px;margin-bottom:8px">
