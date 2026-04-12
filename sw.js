@@ -32,6 +32,12 @@ self.addEventListener('message', e => {
   const data = e.data;
   if (!data) return;
 
+  if (data.type === 'CLEAR_NOTIFY') {
+    self.registration.getNotifications().then(notes => {
+      notes.forEach(n => n.close());
+    }).catch(() => {});
+  }
+
   if (data.type === 'NOTIFY_NOW') {
     self.registration.showNotification('LimitBreaker ⏱', {
       body: data.body || 'レスト終了！次のセットを開始してください',
