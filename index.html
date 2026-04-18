@@ -814,8 +814,8 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
     <div class="bp-handle"></div>
     <div style="font-family:var(--fd);font-size:15px;letter-spacing:1.5px;color:var(--te);margin-bottom:6px">ワークアウトをキャンセル？</div>
     <div style="font-size:13px;color:var(--t3);margin-bottom:14px">入力中のデータは保存されません</div>
-    <button onclick="confirmCancelSession()" style="width:100%;padding:18px 10px;background:rgba(232,89,60,.16);border:0.5px solid rgba(232,89,60,.5);border-radius:12px;font-family:var(--fd);font-size:18px;letter-spacing:1px;color:rgba(232,89,60,.95);cursor:pointer;margin-bottom:10px">キャンセルする</button>
-    <button onclick="closeModal('cancel-session-confirm-modal')" style="width:100%;padding:18px 10px;background:var(--bg3);border:0.5px solid var(--b2);border-radius:12px;font-family:var(--fd);font-size:17px;letter-spacing:1px;color:var(--t2);cursor:pointer">戻る</button>
+    <button onclick="confirmCancelSession()" style="width:100%;padding:18px 10px;background:rgba(232,89,60,.16);border:0.5px solid rgba(232,89,60,.5);border-radius:12px;font-family:var(--fd);font-size:18px;letter-spacing:1px;color:rgba(232,89,60,.95);cursor:pointer;margin-bottom:10px">ワークアウトを終了する</button>
+    <button onclick="closeModal('cancel-session-confirm-modal')" style="width:100%;padding:18px 10px;background:var(--bg3);border:0.5px solid var(--b2);border-radius:12px;font-family:var(--fd);font-size:17px;letter-spacing:1px;color:var(--t2);cursor:pointer">トレーニングを続ける</button>
   </div>
 </div>
 
@@ -1333,7 +1333,7 @@ function renderSessEx(){
       </div>`:'';
       if(rmEl)rmEl.innerHTML=suggest;
       prevEl.innerHTML=`<div style="background:var(--bg2);border:0.5px solid var(--b);border-radius:8px;padding:7px 10px">
-        <div style="font-size:11px;color:var(--t3);letter-spacing:.8px;text-transform:uppercase;margin-bottom:5px">前回 ${dStr}</div>
+        <div style="font-size:11px;color:var(--t3);letter-spacing:.8px;text-transform:uppercase;margin-bottom:5px">前回 ${dStr}　${maxKgPlate}kg</div>
         <div style="display:flex;flex-wrap:wrap;gap:3px">${setRows}</div>
       </div>`;
     } else {
