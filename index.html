@@ -1752,12 +1752,20 @@ function renderStats(){
   const timeEl=document.getElementById('st-timen');if(timeEl)timeEl.textContent=totalTime;
   // PR
   let bestPR=0,bestEx='';
-  records.forEach(r=>r.exercises.forEach(ex=>ex.sets.forEach(s=>{const v=s.kg||0;if(v>bestPR){bestPR=v;bestEx=ex.n}})));
+  records.forEach(r=>r.exercises.forEach(ex=>{const bA=getBarAdd(ex.equip||'none');ex.sets.forEach(s=>{const v=(s.kg||0)+(bA>0?bA:0);if(v>bestPR){bestPR=v;bestEx=ex.n}})}));
   document.getElementById('st-prn').textContent=bestPR?fmtW(bestPR):'—';
   document.getElementById('st-prex').textContent=bestEx.slice(0,10);
   // compare vol
   let cmpText='';
-  if(statsP==='week'&&records.length){const pw=new Date(now);pw.setDate(now.getDate()-14);const pe=new Date(now);pe.setDate(now.getDate()-7);const prevVol=Math.round(records.filter(r=>{const d=new Date(r.date);return d>=pw&&d<pe}).reduce((a,r)=>a+r.totalVol,0));if(prevVol>0){const diff=vol-prevVol;cmpText=`前週比 ${diff>=0?'▲':'▼'}${Math.abs(diff)}kg`;const el=document.getElementById('st-vcmp');el.textContent=cmpText;el.className='bv-cmp '+(diff>=0?'up':'dn')}}else{document.getElementById('st-vcmp').textContent=''}
+  (function(){
+    const cmpEl=document.getElementById('st-vcmp');if(!cmpEl)return;
+    let prevVol=0,cmpLabel='';
+    if(statsP==='week'){const a=new Date(now);a.setDate(now.getDate()-14);const b=new Date(now);b.setDate(now.getDate()-7);prevVol=Math.round(records.filter(r=>{const d=new Date(r.date);return d>=a&&d<b}).reduce((x,r)=>x+r.totalVol,0));cmpLabel='前週比';}
+    else if(statsP==='12m'){const a=new Date(now.getFullYear(),now.getMonth()-23,1);const b=new Date(now.getFullYear(),now.getMonth()-11,1);prevVol=Math.round(records.filter(r=>{const d=new Date(r.date);return d>=a&&d<b}).reduce((x,r)=>x+r.totalVol,0));cmpLabel='前12ヶ月比';}
+    else if(statsP==='year'){const a=new Date(now.getFullYear()-1,0,1);const b=new Date(now.getFullYear()-1,now.getMonth(),now.getDate(),23,59,59);prevVol=Math.round(records.filter(r=>{const d=new Date(r.date);return d>=a&&d<=b}).reduce((x,r)=>x+r.totalVol,0));cmpLabel='前年同期比';}
+    if(cmpLabel&&prevVol>0){const diff=vol-prevVol;const pct=Math.round(diff/prevVol*100);cmpEl.textContent=`${cmpLabel} ${diff>=0?'▲':'▼'}${Math.abs(diff)}kg (${diff>=0?'+':''}${pct}%)`;cmpEl.className='bv-cmp '+(diff>=0?'up':'dn');}
+    else{cmpEl.textContent='';cmpEl.className='bv-cmp';}
+  })();
   // weekly cal
   const wd=['月','火','水','木','金','土','日'];const td=now.getDay();const adj=(td+6)%7;
   const woDates=new Set(records.map(r=>dateKey(r.date)));
@@ -1772,7 +1780,7 @@ function renderStats(){
   if(mvEl)mvEl.innerHTML=musGroups.map((m,i)=>`<div class="mv-row"><div class="mv-top"><div class="mv-name">${MUSCLES_JP[m]||m}</div><div class="mv-val">${vols[i]}kg</div></div><div class="mv-bar"><div class="mv-fill" style="width:${vols[i]/maxV*100}%;background:${colors[i]}"></div></div></div>`).join('');
   // exercise stats
   const exStatsMap={};
-  filtered.forEach(r=>r.exercises.forEach(ex=>{if(!exStatsMap[ex.n])exStatsMap[ex.n]={name:ex.n,maxKg:0,maxReps:0,maxSets:0,vol:0};if(ex.sets.length>exStatsMap[ex.n].maxSets)exStatsMap[ex.n].maxSets=ex.sets.length;ex.sets.forEach(s=>{const kg=s.kg||0;const rp=parseInt(s.reps||0);if(kg>exStatsMap[ex.n].maxKg)exStatsMap[ex.n].maxKg=kg;if(rp>exStatsMap[ex.n].maxReps)exStatsMap[ex.n].maxReps=rp;exStatsMap[ex.n].vol+=calcSetVol(s)})}));
+  filtered.forEach(r=>r.exercises.forEach(ex=>{if(!exStatsMap[ex.n])exStatsMap[ex.n]={name:ex.n,maxKg:0,maxReps:0,maxSets:0,vol:0};if(ex.sets.length>exStatsMap[ex.n].maxSets)exStatsMap[ex.n].maxSets=ex.sets.length;const bA=getBarAdd(ex.equip||'none');ex.sets.forEach(s=>{const kg=(s.kg||0)+(bA>0?bA:0);const rp=parseInt(s.reps||0);if(kg>exStatsMap[ex.n].maxKg)exStatsMap[ex.n].maxKg=kg;if(rp>exStatsMap[ex.n].maxReps)exStatsMap[ex.n].maxReps=rp;exStatsMap[ex.n].vol+=calcSetVol(s)})}));
   const exStats=Object.values(exStatsMap).sort((a,b)=>b.vol-a.vol).slice(0,8);
   const exEl=document.getElementById('ex-stats-list');
   if(exEl)exEl.innerHTML=exStats.length?exStats.map((e,ei)=>`
@@ -1803,8 +1811,9 @@ function renderPRList(){
   // 全記録からexerciseごとに最大kg・そのときのreps集計
   const prMap={};
   records.forEach(r=>r.exercises.forEach(ex=>{
+    const bA=getBarAdd(ex.equip||'none');
     ex.sets.forEach(s=>{
-      const kg=s.kg||0,rp=parseInt(s.reps||0);
+      const kg=(s.kg||0)+(bA>0?bA:0),rp=parseInt(s.reps||0);
       if(kg>0){
         if(!prMap[ex.n]||kg>prMap[ex.n].kg||(kg===prMap[ex.n].kg&&rp>prMap[ex.n].reps)){
           prMap[ex.n]={kg,reps:rp};
@@ -1832,8 +1841,9 @@ function togglePRSel(name){
 function showPRShareView(){
   const prMap={};
   records.forEach(r=>r.exercises.forEach(ex=>{
+    const bA=getBarAdd(ex.equip||'none');
     ex.sets.forEach(s=>{
-      const kg=s.kg||0,rp=parseInt(s.reps||0);
+      const kg=(s.kg||0)+(bA>0?bA:0),rp=parseInt(s.reps||0);
       if(kg>0&&(!prMap[ex.n]||kg>prMap[ex.n].kg)){prMap[ex.n]={kg,reps:rp};}
     });
   }));
@@ -2047,11 +2057,12 @@ function toggleExGraph(idx){
       if(ex.n===name){
         const k=groupKey(r.date);
         if(!grouped[k])grouped[k]={date:k,maxKg:0,maxSets:0,vol:0,rm:0};
+        const bA=getBarAdd(ex.equip||'none');
         ex.sets.forEach(s=>{
-          const kg=s.kg||0,rp=parseInt(s.reps||0);
+          const plate=s.kg||0,kg=plate+(bA>0?bA:0),rp=parseInt(s.reps||0);
           if(kg>grouped[k].maxKg)grouped[k].maxKg=kg;
           if(rp>0){const exM=masterDB.find(e=>e.n===ex.n);const mc=exM?.machine?0.9:1.0;const rm=est1RM(kg,rp,mc);if(rm>grouped[k].rm)grouped[k].rm=rm;}
-          grouped[k].vol+=(kg)*(rp||1);
+          grouped[k].vol+=(plate)*(rp||1);
         });
         if(ex.sets.length>grouped[k].maxSets)grouped[k].maxSets=ex.sets.length;
       }
