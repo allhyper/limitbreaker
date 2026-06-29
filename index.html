@@ -11,15 +11,10 @@
 <link rel="manifest" href="manifest.json">
 <title>LimitBreaker</title>
 <script>
-let _swReg=null;
 if("serviceWorker" in navigator){
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/limitbreaker/sw.js").then(reg=>{_swReg=reg;}).catch(()=>{});
+    navigator.serviceWorker.register("/limitbreaker/sw.js");
   });
-}
-function _postSW(msg){
-  if(_swReg&&_swReg.active){_swReg.active.postMessage(msg);return;}
-  navigator.serviceWorker.ready.then(reg=>{_swReg=reg;if(reg.active)reg.active.postMessage(msg);}).catch(()=>{});
 }
 </script>
 
@@ -110,6 +105,7 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
 .sess-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
 .sess-end{padding:5px 8px;height:auto;background:var(--grd);border:0.5px solid rgba(76,175,80,.5);border-radius:6px;font-family:var(--fd);font-size:14px;letter-spacing:1px;color:var(--gr);cursor:pointer;white-space:normal}
 .sess-cancel{padding:5px 8px;height:auto;background:transparent;border:0.5px solid rgba(232,89,60,0.6);border-radius:6px;font-family:var(--fd);font-size:14px;letter-spacing:1px;color:rgba(232,89,60,0.85);cursor:pointer;white-space:normal}
+.sess-home{display:flex;align-items:center;justify-content:center;width:34px;height:34px;background:var(--bg3);border:0.5px solid var(--b2);border-radius:7px;color:var(--t2);cursor:pointer;flex-shrink:0;padding:0}
 .sess-cancel:active{background:var(--bg3)}
 .sess-name{font-family:var(--fd);font-size:16px;letter-spacing:1px;color:var(--te)}
 .sess-elapsed{font-size:13px;color:var(--t3)}
@@ -451,7 +447,10 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
 <div class="sc" id="sc-session" style="padding:0">
   <div class="sess-top">
     <div class="sess-hdr">
-      <div><div class="sess-name" id="sess-name">—</div><div class="sess-elapsed" id="sess-elapsed">0:00</div></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="sess-home" onclick="nav('home')" aria-label="ホームに戻る" title="ホームに戻る（記録は保持されます）"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 9L12 2L21 9V20a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M9 22V12h6v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+        <div><div class="sess-name" id="sess-name">—</div><div class="sess-elapsed" id="sess-elapsed">0:00</div></div>
+      </div>
       <div style="display:flex;gap:4px;align-items:center">
         <button class="sess-cancel" onclick="cancelSession()">← キャンセル</button>
         <button class="sess-end" onclick="endSession()">保存して終了</button>
@@ -809,16 +808,6 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
 </div>
 
 <!-- DELETE EXERCISE CONFIRM MODAL -->
-<div class="bottom-pop" id="cancel-session-confirm-modal">
-  <div class="bp-box">
-    <div class="bp-handle"></div>
-    <div style="font-family:var(--fd);font-size:15px;letter-spacing:1.5px;color:var(--te);margin-bottom:6px">ワークアウトをキャンセル？</div>
-    <div style="font-size:13px;color:var(--t3);margin-bottom:14px">入力中のデータは保存されません</div>
-    <button onclick="confirmCancelSession()" style="width:100%;padding:18px 10px;background:rgba(232,89,60,.16);border:0.5px solid rgba(232,89,60,.5);border-radius:12px;font-family:var(--fd);font-size:18px;letter-spacing:1px;color:rgba(232,89,60,.95);cursor:pointer;margin-bottom:10px">ワークアウトを終了する</button>
-    <button onclick="closeModal('cancel-session-confirm-modal')" style="width:100%;padding:18px 10px;background:var(--bg3);border:0.5px solid var(--b2);border-radius:12px;font-family:var(--fd);font-size:17px;letter-spacing:1px;color:var(--t2);cursor:pointer">トレーニングを続ける</button>
-  </div>
-</div>
-
 <div class="bottom-pop" id="del-ex-confirm-modal">
   <div class="bp-box">
     <div class="bp-handle"></div>
@@ -864,8 +853,36 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
 /* ═══ STORAGE ═══ */
 const S={get(k){try{const v=localStorage.getItem('il11_'+k);return v?JSON.parse(v):null}catch(e){return null}},set(k,v){try{localStorage.setItem('il11_'+k,JSON.stringify(v))}catch(e){}},remove(k){try{localStorage.removeItem('il11_'+k)}catch(e){}}};
 
+/* ═══ DATA SAFETY（スキーマ版管理＋非破壊マイグレーション＋自動バックアップ）═══
+   既存ユーザーのデータを更新時に絶対に失わせないための保護層。
+   - 削除は一切行わない（不足フィールドの補完のみ）
+   - スキーマ版の更新を検知したら、変換前に自動バックアップを取得
+   - il11_プレフィックス／キー名は不変（変更すると既存データが参照不能になる）
+   - 緊急復旧: コンソールで LB_listBackups() / LB_restoreBackup("il11_backup_xxx") */
+const SCHEMA_VER=1;
+const DATA_KEYS=["settings","masterDB","routines","records","bodyData","goalText"];
+const BACKUP_KEEP=3;
+function _listBackups(){const a=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.indexOf("il11_backup_")===0)a.push(k);}return a.sort();}
+function _dataSafety(){
+  try{
+    const storedVer=S.get("schemaVer");
+    const hasData=DATA_KEYS.some(k=>localStorage.getItem("il11_"+k)!==null);
+    if(hasData&&storedVer!==SCHEMA_VER){
+      const snap={_ver:storedVer,_at:new Date().toISOString()};
+      DATA_KEYS.forEach(k=>{const v=localStorage.getItem("il11_"+k);if(v!==null)snap[k]=v;});
+      try{localStorage.setItem("il11_backup_"+Date.now(),JSON.stringify(snap));}catch(e){}
+      const bks=_listBackups();
+      while(bks.length>BACKUP_KEEP){const old=bks.shift();try{localStorage.removeItem(old);}catch(e){}}
+    }
+  }catch(e){}
+}
+_dataSafety();
+window.LB_listBackups=()=>_listBackups();
+window.LB_restoreBackup=(key)=>{try{const snap=JSON.parse(localStorage.getItem(key));if(!snap)return"not found";DATA_KEYS.forEach(k=>{if(snap[k]!==undefined)localStorage.setItem("il11_"+k,snap[k]);});location.reload();return"restored";}catch(e){return"error: "+e.message;}};
+
 /* ═══ SETTINGS ═══ */
-let settings=S.get('settings')||{unit:'kg',defaultSets:3,defaultRest:90,barbell:20,ezbar:10,dumbbell:2,collarBarbell:0.5,collarEzbar:0.5,collarDumbbell:0.5,volReps:true,volCheat:false,volAssist:false,timerSound:'beep',timerVoiceGender:'female'};
+const DEFAULT_SETTINGS={unit:'kg',defaultSets:3,defaultRest:90,barbell:20,ezbar:10,dumbbell:2,collarBarbell:0.5,collarEzbar:0.5,collarDumbbell:0.5,volReps:true,volCheat:false,volAssist:false,timerSound:'beep',timerVoiceGender:'female'};
+let settings=Object.assign({},DEFAULT_SETTINGS,S.get('settings')||{});
 const saveSettings=()=>{
   const drEl=document.getElementById('set-default-rest');
   if(drEl)settings.defaultRest=parseInt(drEl.value)||90;
@@ -898,6 +915,8 @@ function getBarAdd(equip){
 }
 const toKg=v=>settings.unit==='lb'?+(v/2.20462).toFixed(2):v;
 const toDisp=kg=>settings.unit==='lb'?+(kg*2.20462).toFixed(1):kg;
+// 推定1RM（保守式）：高レップの過大評価を抑えるためレップを12で上限化。mcは種目補正(マシン0.9等)
+function est1RM(kg,reps,mc){const k=+kg||0;const r=Math.min(parseInt(reps)||0,12);if(k<=0||r<=0)return 0;return Math.round(k*(1+r/30)*(mc||1));}
 
 function setUnit(u){settings.unit=u;S.set('settings',settings);document.getElementById('tog-kg').classList.toggle('on',u==='kg');document.getElementById('tog-lb').classList.toggle('on',u==='lb');document.getElementById('db-wu').textContent=u==='lb'?'lb':'kg';reRender()}
 
@@ -950,6 +969,7 @@ records.forEach(r=>{if(!r._id)r._id='r'+Math.random().toString(36).slice(2);});
 let bodyData=S.get('bodyData')||[]; // [{date,wt,bf,mm,waist,memo}]
 const saveRecs=()=>S.set('records',records);
 const saveBD=()=>S.set('bodyData',bodyData);
+if(S.get("schemaVer")!==SCHEMA_VER)S.set("schemaVer",SCHEMA_VER);
 const dateKey=d=>{const dt=new Date(d);const y=dt.getFullYear();const m=String(dt.getMonth()+1).padStart(2,"0");const day=String(dt.getDate()).padStart(2,"0");return`${y}-${m}-${day}`;};
 
 /* ═══ SESSION STATE ═══ */
@@ -1079,7 +1099,7 @@ function renderTodayWorkout(todayRecs,el,expanded){
       const topSet=sets.find(s=>s.kg===maxKg);
       const exM=masterDB.find(e=>e.n===ex.n);
       const mc=exM?.machine?0.9:1.0;
-      const rm=maxKg>0&&topSet?Math.round(maxKg*(1+parseInt(topSet.reps||1)/30)*mc):0;
+      const rm=topSet?est1RM(maxKg,topSet.reps||1,mc):0;
       const setTags=sets.map(s=>{
         const tot=bAdd>0?`${((s.kg||0)+bAdd).toFixed(1).replace(/\.0$/,'')}kg`:`${s.kg||0}kg`;
         return`<span style="font-size:12px;color:var(--t2);background:var(--bg3);border:0.5px solid var(--b);border-radius:3px;padding:0 4px;white-space:nowrap">${tot}×${s.reps}</span>`;
@@ -1247,7 +1267,7 @@ function renderSessEx(){
   const prevEl=document.getElementById('sess-prev-rec');
   if(prevEl){
     const exName=ex.n;
-    const prevRecs=[...records].filter(r=>!session._editId||r._id!==session._editId).sort((a,b)=>new Date(b.date)-new Date(a.date));
+    const prevRecs=[...records].sort((a,b)=>new Date(b.date)-new Date(a.date));
     let prevEx=null,prevDate=null;
     for(const r of prevRecs){
       const found=r.exercises.find(e=>e.n===exName);
@@ -1257,7 +1277,9 @@ function renderSessEx(){
       const d=new Date(prevDate);
       const dStr=`${d.getMonth()+1}/${d.getDate()}`;
       const setRows=prevEx.sets.filter(s=>parseInt(s.reps||0)>0).map(s=>{
-        const tot=`${(s.kg||0)}kg`;
+        const eqp2=prevEx.equip||'none';
+        const bAdd2=getBarAdd(eqp2)*2;
+        const tot=bAdd2>0?`${((s.kg||0)+bAdd2).toFixed(1).replace(/\.0$/,'')}kg`:`${s.kg||0}kg`;
         const cheatStr=parseInt(s.cheat||0)>0?` +${s.cheat}C`:'';
         const assistStr=parseInt(s.assist||0)>0?` -${s.assist}A`:'';
         return`<span style="background:var(--bg3);border:0.5px solid var(--b);border-radius:4px;padding:1px 5px;font-size:13px;color:var(--t2);white-space:nowrap">${tot}×${s.reps}${cheatStr}${assistStr}</span>`;
@@ -1275,7 +1297,7 @@ function renderSessEx(){
         found.sets.filter(s=>parseInt(s.reps||0)>0).forEach(s=>{
           const tot=(s.kg||0)+(bA>0?bA:0);
           const rp=parseInt(s.reps||1);
-          const rm=Math.round(tot*(1+rp/30)*mc);
+          const rm=est1RM(tot,rp,mc);
           if(rm>bestRmVal)bestRmVal=rm;
         });
       }
@@ -1286,7 +1308,7 @@ function renderSessEx(){
       const maxKgPlate=Math.max(...prevEx.sets.map(s=>s.kg||0));
       const maxKgTotal=maxKgPlate+(prevBarAdd>0?prevBarAdd:0);
       const topReps=parseInt(prevEx.sets.find(s=>s.kg===maxKgPlate)?.reps||1);
-      const refRmVal=maxKgTotal>0?Math.round(maxKgTotal*(1+topReps/30)*mc):0;
+      const refRmVal=est1RM(maxKgTotal,topReps,mc);
       const rec80=refRmVal>0?Math.round(refRmVal*0.8*2)/2:0;
       const rec85=refRmVal>0?Math.round(refRmVal*0.85*2)/2:0;
 
@@ -1300,7 +1322,7 @@ function renderSessEx(){
 
       // TODAY'S TARGET（直前記録ベース・参考値）
       const suggest=refRmVal>0?`<div style="margin-top:0">
-        <div style="font-size:10px;color:var(--t3);margin-bottom:4px;letter-spacing:.8px">TODAY'S TARGET <span style="font-size:9px;opacity:.6">前回記録より算出・参考値</span></div>
+        <div style="font-size:10px;color:var(--t3);margin-bottom:4px;letter-spacing:.8px">TODAY'S TARGET <span style="font-size:9px;opacity:.6">前回ベスト ${fmtW(maxKgTotal)}×${topReps} を基準・参考値</span></div>
         <div style="display:flex;gap:4px">
           <div style="flex:1;background:var(--bld);border:0.5px solid rgba(59,139,212,.4);border-radius:8px;padding:6px 8px">
             <div style="font-size:10px;color:var(--bl);margin-bottom:3px">筋肥大 (80%)</div>
@@ -1333,7 +1355,7 @@ function renderSessEx(){
       </div>`:'';
       if(rmEl)rmEl.innerHTML=suggest;
       prevEl.innerHTML=`<div style="background:var(--bg2);border:0.5px solid var(--b);border-radius:8px;padding:7px 10px">
-        <div style="font-size:11px;color:var(--t3);letter-spacing:.8px;text-transform:uppercase;margin-bottom:5px">前回 ${dStr}　${maxKgPlate}kg</div>
+        <div style="font-size:11px;color:var(--t3);letter-spacing:.8px;text-transform:uppercase;margin-bottom:5px">前回 ${dStr}</div>
         <div style="display:flex;flex-wrap:wrap;gap:3px">${setRows}</div>
       </div>`;
     } else {
@@ -1453,6 +1475,9 @@ function addSessSet(){
   // kg（重量）のみコピー、回数はコピーしない
   ex.sets.push({kg:last.kg,reps:'',cheat:0,assist:0,posNeg:'',note:'',done:false});
   refreshSetRows();
+  // 追加した行が見切れないよう #setrows を最下部へ自動スクロール（追加を即確認できる）
+  const sr=document.getElementById("setrows");
+  if(sr)requestAnimationFrame(()=>{try{sr.scrollTo({top:sr.scrollHeight,behavior:"smooth"});}catch(e){sr.scrollTop=sr.scrollHeight;}});
 }
 function delSessSet(i){
   if(!session)return;
@@ -1480,22 +1505,6 @@ function addExToSess(mid){
 }
 
 function cancelSession(){
-  // session.exsの入力チェック（kg or reps）
-  const sessionHasInput=session&&session.exs&&session.exs.some(ex=>ex.sets&&ex.sets.some(s=>{
-    const kg=parseFloat(s.kg||0);
-    const reps=parseInt(s.reps||0);
-    return kg>0||reps>0;
-  }));
-  // DOMのinput要素も直接確認（oninputより先に判定される場合の保険）
-  const domHasInput=Array.from(document.querySelectorAll('#setrows .si')).some(inp=>parseFloat(inp.value||0)>0);
-  if(sessionHasInput||domHasInput){openModal('cancel-session-confirm-modal');return;}
-  _doCancelSession();
-}
-function confirmCancelSession(){
-  closeModal('cancel-session-confirm-modal');
-  _doCancelSession();
-}
-function _doCancelSession(){
   session=null;
   sessExercises=[];
   clearInterval(elapsedI);
@@ -1572,11 +1581,7 @@ async function getAudioCtx(){
   if(_audioCtx.state==="suspended")await _audioCtx.resume();
   return _audioCtx;
 }
-// ─── INLINE TIMER ───
-// 終了判定は「0になった瞬間のvisibility」だけで行う。
-// 復帰時に音は鳴らさない。SWはタイマーを持たず通知のみ担当。
 let inlineTimerI=null,inlineTimerCur=0,inlineTimerTot=0,inlineTimerRunning=false,inlineTimerEnd=0,_alarmFired=false;
-
 function toggleInlineTimer(){
   if(inlineTimerRunning||inlineTimerCur>0){stopInlineTimer();return;}
   try{getAudioCtx();}catch(e){}
@@ -1594,8 +1599,7 @@ function toggleInlineTimer(){
   startInlineTI();
 }
 function stopInlineTimer(){
-  clearInterval(inlineTimerI);
-  inlineTimerRunning=false;inlineTimerCur=0;inlineTimerEnd=0;_alarmFired=false;
+  clearInterval(inlineTimerI);inlineTimerRunning=false;inlineTimerCur=0;inlineTimerEnd=0;_alarmFired=false;
   const bar=document.getElementById('rest-timer-bar');
   const info=document.getElementById('rest-timer-info');
   const btn=document.getElementById('rest-go-btn');
@@ -1617,42 +1621,33 @@ function updateInlineBar(cur,tot){
   const fill=document.getElementById('rest-timer-fill');
   if(fill){fill.style.width=(tot>0?Math.max(cur/tot*100,0):0)+'%';fill.style.background=cur<=3?'var(--ac)':'var(--bl)';}
 }
-function _fireAlarm(){
-  if(_alarmFired)return;
-  _alarmFired=true;
-  // フォア・バック問わず音を鳴らす
-  playAlarm();
-  // バックグラウンド時は通知も出す
-  if(document.visibilityState!=='visible'){
-    _postSW({type:'NOTIFY_NOW',body:'レスト終了！次のセットを開始してください'});
-  }
-}
 function startInlineTI(){
   clearInterval(inlineTimerI);
   inlineTimerI=setInterval(()=>{
     inlineTimerCur=Math.max(0,Math.round((inlineTimerEnd-Date.now())/1000));
     const _c=document.getElementById('rest-timer-cnt');if(_c)_c.textContent=inlineTimerCur;
     updateInlineBar(inlineTimerCur,inlineTimerTot);
-    if(inlineTimerCur<=0){clearInterval(inlineTimerI);_fireAlarm();setTimeout(stopInlineTimer,1200);}
+    if(inlineTimerCur<=0){clearInterval(inlineTimerI);if(!_alarmFired){_alarmFired=true;playAlarm();_notifyTimerEnd();}setTimeout(stopInlineTimer,1200);}
   },500);
 }
-// 復帰時：表示補正のみ。音・通知は鳴らさない。
-document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='visible'){
-    // 復帰時にrest-end通知を全消去
-    _postSW({type:'CLEAR_NOTIFY'});
+function _notifyTimerEnd(){
+  if(Notification&&Notification.permission==='granted'){
+    try{new Notification('LimitBreaker',{body:'レスト終了！次のセットを開始してください',icon:'/limitbreaker/icon-192.png',tag:'rest-end',requireInteraction:false});}catch(e){}
   }
+}
+// バックグラウンドから復帰時に時間を補正
+document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible'&&inlineTimerRunning&&inlineTimerEnd>0){
     inlineTimerCur=Math.max(0,Math.round((inlineTimerEnd-Date.now())/1000));
     const _c=document.getElementById('rest-timer-cnt');if(_c)_c.textContent=inlineTimerCur;
     updateInlineBar(inlineTimerCur,inlineTimerTot);
-    if(inlineTimerCur>0){
-      // まだ時間が残っている → intervalを再起動（バックグラウンドでスロットルされた場合の補正）
-      startInlineTI();
-    }else{
-      // すでに0過ぎ → 何もしない（_fireAlarmはsetIntervalが0を検知した瞬間に発火済み or BG通知済み）
+    if(inlineTimerCur<=0){
       clearInterval(inlineTimerI);
-      setTimeout(stopInlineTimer,0);
+      if(!_alarmFired){_alarmFired=true;playAlarm();_notifyTimerEnd();}
+      setTimeout(stopInlineTimer,1200);
+    }else{
+      // intervalがバックグラウンドで止まっている場合に再起動
+      startInlineTI();
     }
   }
 });
@@ -1662,21 +1657,41 @@ function playAlarm(){
   const sound=settings.timerSound||'beep';
   if(sound==='off'){if(navigator.vibrate)navigator.vibrate([200,100,200,100,400]);return;}
   if(sound!=='beep'){
-    const gender=(settings.timerVoiceGender||'female')==='male'?'m':'w';
-    const fileMap={go:'01.go',herewego:'02.here we go',letsgo:"03.let's go",letsdothis:'04.go for it'};
-    // female版はw04のみ"ready go"
-    const femaleMap={letsdothis:'04.ready go'};
-    const base=gender==='w'&&femaleMap[sound]?femaleMap[sound]:(fileMap[sound]||'01.go');
-    const url=`/limitbreaker/sounds/${gender}${base}.wav`;
     try{
-      const a=new Audio(url);
-      a.volume=1;
-      a.play().catch(()=>{});
+      const phrases={
+        go:['Go!','Go! Go! Go!','Come on, Go!'],
+        herewego:['Here we go!','Here we GO, let\'s crush it!','Here we go, push hard!'],
+        letsgo:["Let's go!",'Let\'s GO! You got this!','Let\'s GO, push through!'],
+        letsdothis:["Let's do this!",'Let\'s DO THIS, beast mode!',"Let's do this, no excuses!"]
+      };
+      const list=phrases[sound]||phrases.go;
+      const msg=list[Math.floor(Math.random()*list.length)];
+      const u=new SpeechSynthesisUtterance(msg);
+      u.lang='en-US';
+      u.rate=1.1;
+      u.pitch=settings.timerVoiceGender==='male'?0.7:1.2;
+      u.volume=1;
+      const speak=()=>{
+        const voices=window.speechSynthesis.getVoices();
+        if(voices.length>0){
+          const lang=voices.filter(v=>v.lang.startsWith('en'));
+          const genVoices=lang.filter(v=>settings.timerVoiceGender==='male'?
+            /male|man|david|mark|daniel|james|guy/i.test(v.name):
+            /female|woman|samantha|karen|victoria|alice|zira/i.test(v.name));
+          if(genVoices.length>0)u.voice=genVoices[0];
+          else if(lang.length>0)u.voice=lang[0];
+        }
+        if(window.speechSynthesis.paused)window.speechSynthesis.resume();
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(u);
+      };
+      if(window.speechSynthesis.getVoices().length>0){speak();}
+      else{window.speechSynthesis.onvoiceschanged=speak;}
     }catch(e){}
     if(navigator.vibrate)navigator.vibrate([100,50,100,50,200]);
     return;
   }
-  // beep
+  // beep: AudioContext.resume() は非同期なので .then() で待ってから鳴らす
   getAudioCtx().then(ctx=>{
     const playBeepSet=(offset=0)=>{
       const beep=(freq,start,dur)=>{
@@ -1702,6 +1717,7 @@ function getFilteredRecords(){
   const now=new Date();
   if(statsP==='day'){const tk=dateKey(now);return records.filter(r=>dateKey(r.date)===tk);}
   if(statsP==='week'){const w=new Date(now);w.setDate(now.getDate()-7);return records.filter(r=>new Date(r.date)>=w);}
+  if(statsP==='12m'){const w=new Date(now.getFullYear(),now.getMonth()-11,1);return records.filter(r=>new Date(r.date)>=w);}
   if(statsP==='month'){
     const td=new Date(now.getFullYear(),now.getMonth()+statsMonthOffset,1);
     const ms=new Date(td.getFullYear(),td.getMonth(),1),me=new Date(td.getFullYear(),td.getMonth()+1,0,23,59,59);
@@ -1711,7 +1727,7 @@ function getFilteredRecords(){
   return records; // 'all'
 }
 function renderStats(){
-  const periods=['日','週','月','年','累計'];const pkeys=['day','week','month','year','all'];
+  const periods=['週','12ヶ月','年','累計'];const pkeys=['week','12m','year','all'];
   document.getElementById('stats-ptabs').innerHTML=periods.map((p,i)=>`<div class="pt ${pkeys[i]===statsP?'on':''}" onclick="setStatsP('${pkeys[i]}')">${p}</div>`).join('');
   const now=new Date();
   let filtered=getFilteredRecords();
@@ -1869,6 +1885,25 @@ function sharePRCard(){
 let cumulYear=new Date().getFullYear();
 
 // 月別横棒グラフSVGを生成するユーティリティ（全体・種目別共用）
+function buildLast12Months(exName){
+  const now=new Date();
+  const months=[];
+  for(let i=11;i>=0;i--){
+    const dd=new Date(now.getFullYear(),now.getMonth()-i,1);
+    months.push({label:`${dd.getMonth()+1}月`,y:dd.getFullYear(),mo:dd.getMonth(),sets:0,vol:0,sessions:0});
+  }
+  records.forEach(r=>{
+    const dt=new Date(r.date);
+    const slot=months.find(m=>m.y===dt.getFullYear()&&m.mo===dt.getMonth());
+    if(!slot)return;
+    if(exName){
+      r.exercises.forEach(ex=>{if(ex.n!==exName)return;slot.sessions++;ex.sets.forEach(s=>{slot.sets++;slot.vol+=(s.kg||0)*(parseInt(s.reps||0)||1);});});
+    }else{
+      slot.sessions++;slot.vol+=r.totalVol||0;r.exercises.forEach(ex=>ex.sets.forEach(()=>slot.sets++));
+    }
+  });
+  return months;
+}
 function buildMonthlyBarSVG(months,containerW){
   const maxSets=Math.max(...months.map(m=>m.sets),1);
   const maxVol=Math.max(...months.map(m=>m.vol),1);
@@ -2015,7 +2050,7 @@ function toggleExGraph(idx){
         ex.sets.forEach(s=>{
           const kg=s.kg||0,rp=parseInt(s.reps||0);
           if(kg>grouped[k].maxKg)grouped[k].maxKg=kg;
-          if(rp>0){const exM=masterDB.find(e=>e.n===ex.n);const mc=exM?.machine?0.9:1.0;const rm=Math.round(kg*(1+rp/30)*mc);if(rm>grouped[k].rm)grouped[k].rm=rm;}
+          if(rp>0){const exM=masterDB.find(e=>e.n===ex.n);const mc=exM?.machine?0.9:1.0;const rm=est1RM(kg,rp,mc);if(rm>grouped[k].rm)grouped[k].rm=rm;}
           grouped[k].vol+=(kg)*(rp||1);
         });
         if(ex.sets.length>grouped[k].maxSets)grouped[k].maxSets=ex.sets.length;
@@ -2059,6 +2094,27 @@ function toggleExGraph(idx){
   } else {
     // day：データ点をそのままスロットに
     xSlots=pts.map(p=>({key:p.date,label:p.date}));
+  }
+
+  // ── 12ヶ月タブは直近12ヶ月の月別横棒グラフで表示 ──
+  if(statsP==='12m'){
+    const exMonths=buildLast12Months(name);
+    const totalSets=exMonths.reduce((a,m)=>a+m.sets,0);
+    const totalVol=Math.round(exMonths.reduce((a,m)=>a+m.vol,0));
+    const W2=el.offsetWidth||280;
+    el.innerHTML=`
+      <div style="font-size:13px;color:var(--t3);margin-bottom:4px">${name} / 直近12ヶ月（タップで閉じる）</div>
+      <div style="display:flex;gap:8px;margin-bottom:6px">
+        <div style="flex:1;background:var(--bg3);border:0.5px solid var(--b);border-radius:7px;padding:5px 8px;text-align:center"><div style="font-family:var(--fd);font-size:15px;color:#3B8BD4">${totalSets}</div><div style="font-size:17px;color:var(--t3)">Total Sets</div></div>
+        <div style="flex:1;background:var(--bg3);border:0.5px solid var(--b);border-radius:7px;padding:5px 8px;text-align:center"><div style="font-family:var(--fd);font-size:15px;color:var(--ac)">${Math.round(totalVol/1000*10)/10}<span style="font-size:14px;color:var(--t3)">t</span></div><div style="font-size:17px;color:var(--t3)">Volume</div></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:4px">
+        <div style="display:flex;align-items:center;gap:3px"><div style="width:7px;height:7px;border-radius:1px;background:#3B8BD4"></div><span style="font-size:17px;color:var(--t3)">セット数</span></div>
+        <div style="display:flex;align-items:center;gap:3px"><div style="width:7px;height:7px;border-radius:1px;background:#E8593C"></div><span style="font-size:17px;color:var(--t3)">ボリューム</span></div>
+      </div>
+      ${buildMonthlyBarSVG(exMonths,W2)}
+    `;
+    return;
   }
 
   // ── 累計タブは月別横棒グラフで表示 ──
@@ -2268,7 +2324,7 @@ function renderHomeCalDet(){
       if(!displaySets.length)return'';
       const maxKg=Math.max(0,...displaySets.map(s=>s.kg||0));
       const topSet=displaySets.find(s=>s.kg===maxKg)||displaySets[0];
-      const exM2a=masterDB.find(e=>e.n===ex.n);const mc2a=exM2a?.machine?0.9:1.0;const rm=maxKg>0?Math.round(maxKg*(1+parseInt(topSet.reps||1)/30)*mc2a):0;
+      const exM2a=masterDB.find(e=>e.n===ex.n);const mc2a=exM2a?.machine?0.9:1.0;const rm=est1RM(maxKg,topSet.reps||1,mc2a);
       const rows=displaySets.map((s,si)=>{
         const eqp=ex.equip||'none';
         const bAdd=getBarAdd(eqp);
@@ -2362,7 +2418,7 @@ function renderCalDet(){
       if(!displaySets.length)return'';
       const maxKg=Math.max(0,...displaySets.map(s=>s.kg||0));
       const topSet=displaySets.find(s=>s.kg===maxKg)||displaySets[0];
-      const exM2b=masterDB.find(e=>e.n===ex.n);const mc2b=exM2b?.machine?0.9:1.0;const rm=maxKg>0?Math.round(maxKg*(1+parseInt(topSet.reps||1)/30)*mc2b):0;
+      const exM2b=masterDB.find(e=>e.n===ex.n);const mc2b=exM2b?.machine?0.9:1.0;const rm=est1RM(maxKg,topSet.reps||1,mc2b);
       const setTable=`<table style="width:100%;border-collapse:collapse;margin-top:4px">
         <thead><tr style="border-bottom:0.5px solid var(--b2)">
           <th style="font-size:11px;color:var(--t3);font-weight:400;text-align:center;padding:2px 4px">SET</th>
@@ -2437,7 +2493,7 @@ function showShareView(globalIdx){
     if(!valid.length)return'';
     const maxKg=Math.max(0,...valid.map(s=>s.kg||0));
     const topSet=valid.find(s=>s.kg===maxKg)||valid[0];
-    const exM2c=masterDB.find(e=>e.n===ex.n);const mc2c=exM2c?.machine?0.9:1.0;const rm=maxKg>0?Math.round(maxKg*(1+parseInt(topSet.reps||1)/30)*mc2c):0;
+    const exM2c=masterDB.find(e=>e.n===ex.n);const mc2c=exM2c?.machine?0.9:1.0;const rm=est1RM(maxKg,topSet.reps||1,mc2c);
     const rows=valid.map((s,i)=>{
       const vol=Math.round((s.kg||0)*parseInt(s.reps||0));
       return`<tr style="border-top:0.5px solid rgba(255,255,255,.08)">
@@ -2531,7 +2587,6 @@ function delCalRecord(idx){
   records.splice(idx,1);
   saveRecs();renderCal();renderHome();renderHomeCal();
   renderCalDet();renderHomeCalDet();
-  if(session)renderSessEx();
 }
 function delCalEx(recIdx,exIdx){
   const recs=records.filter(r=>dateKey(r.date)===calSel);
@@ -2544,7 +2599,6 @@ function delCalEx(recIdx,exIdx){
   records[globalIdx].totalVol=Math.round(newVol);
   if(!records[globalIdx].exercises.length)records.splice(globalIdx,1);
   saveRecs();renderCal();renderHome();renderHomeCal();
-  if(session)renderSessEx();
 }
 
 /* ═══ BODY ═══ */
@@ -2875,8 +2929,7 @@ function renderSettings(){
   const vc=document.getElementById('vol-cheat');if(vc)vc.checked=!!settings.volCheat;
   const va=document.getElementById('vol-assist');if(va)va.checked=!!settings.volAssist;
   // timer sound
-  const gender=settings.timerVoiceGender||'female';
-  const SOUNDS=[{id:'off',l:'🔕 オフ'},{id:'beep',l:'🔔 ビープ音'},{id:'go',l:'🗣 "Go!"'},{id:'herewego',l:'🗣 "Here we go!"'},{id:'letsgo',l:"🗣 \"Let's go!\""},{id:'letsdothis',l:gender==='male'?'🗣 "Go for it!"':'🗣 "Ready, go!"'}];
+  const SOUNDS=[{id:'off',l:'🔕 オフ'},{id:'beep',l:'🔔 ビープ音'},{id:'go',l:'🗣 "Go!"'},{id:'herewego',l:'🗣 "Here we go!"'},{id:'letsgo',l:'🗣 "Let\'s go!"'},{id:'letsdothis',l:'🗣 "Let\'s do this!"'}];
   const tsEl=document.getElementById('timer-sound-btns');
   if(tsEl)tsEl.innerHTML=`
     <div style="display:flex;gap:6px;margin-bottom:8px">
