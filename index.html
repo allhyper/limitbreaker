@@ -1278,7 +1278,7 @@ function renderSessEx(){
       const dStr=`${d.getMonth()+1}/${d.getDate()}`;
       const setRows=prevEx.sets.filter(s=>parseInt(s.reps||0)>0).map(s=>{
         const eqp2=prevEx.equip||'none';
-        const bAdd2=getBarAdd(eqp2)*2;
+        const bAdd2=getBarAdd(eqp2);
         const tot=bAdd2>0?`${((s.kg||0)+bAdd2).toFixed(1).replace(/\.0$/,'')}kg`:`${s.kg||0}kg`;
         const cheatStr=parseInt(s.cheat||0)>0?` +${s.cheat}C`:'';
         const assistStr=parseInt(s.assist||0)>0?` -${s.assist}A`:'';
@@ -1657,37 +1657,51 @@ function playAlarm(){
   const sound=settings.timerSound||'beep';
   if(sound==='off'){if(navigator.vibrate)navigator.vibrate([200,100,200,100,400]);return;}
   if(sound!=='beep'){
-    try{
-      const phrases={
-        go:['Go!','Go! Go! Go!','Come on, Go!'],
-        herewego:['Here we go!','Here we GO, let\'s crush it!','Here we go, push hard!'],
-        letsgo:["Let's go!",'Let\'s GO! You got this!','Let\'s GO, push through!'],
-        letsdothis:["Let's do this!",'Let\'s DO THIS, beast mode!',"Let's do this, no excuses!"]
-      };
-      const list=phrases[sound]||phrases.go;
-      const msg=list[Math.floor(Math.random()*list.length)];
-      const u=new SpeechSynthesisUtterance(msg);
-      u.lang='en-US';
-      u.rate=1.1;
-      u.pitch=settings.timerVoiceGender==='male'?0.7:1.2;
-      u.volume=1;
-      const speak=()=>{
-        const voices=window.speechSynthesis.getVoices();
-        if(voices.length>0){
-          const lang=voices.filter(v=>v.lang.startsWith('en'));
-          const genVoices=lang.filter(v=>settings.timerVoiceGender==='male'?
-            /male|man|david|mark|daniel|james|guy/i.test(v.name):
-            /female|woman|samantha|karen|victoria|alice|zira/i.test(v.name));
-          if(genVoices.length>0)u.voice=genVoices[0];
-          else if(lang.length>0)u.voice=lang[0];
-        }
-        if(window.speechSynthesis.paused)window.speechSynthesis.resume();
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.speak(u);
-      };
-      if(window.speechSynthesis.getVoices().length>0){speak();}
-      else{window.speechSynthesis.onvoiceschanged=speak;}
-    }catch(e){}
+    // 用意した録音WAVを再生（男女別）。timerSound→ファイル番号、gender→接頭辞 m/w。失敗時のみTTSへフォールバック
+    const voiceFiles={
+      male:{go:"m01.go.wav",herewego:"m02.here we go.wav",letsgo:"m03.let's go.wav",letsdothis:"m04.go for it.wav"},
+      female:{go:"w01.go.wav",herewego:"w02.here we go.wav",letsgo:"w03.let's go.wav",letsdothis:"w04.ready go.wav"}
+    };
+    const gender=settings.timerVoiceGender==='male'?'male':'female';
+    const fname=(voiceFiles[gender]||voiceFiles.female)[sound];
+    const ttsFallback=()=>{
+      try{
+        const phrases={
+          go:['Go!','Go! Go! Go!','Come on, Go!'],
+          herewego:['Here we go!','Here we GO, let\'s crush it!','Here we go, push hard!'],
+          letsgo:["Let's go!",'Let\'s GO! You got this!','Let\'s GO, push through!'],
+          letsdothis:["Let's do this!",'Let\'s DO THIS, beast mode!',"Let's do this, no excuses!"]
+        };
+        const list=phrases[sound]||phrases.go;
+        const msg=list[Math.floor(Math.random()*list.length)];
+        const u=new SpeechSynthesisUtterance(msg);
+        u.lang='en-US';u.rate=1.1;u.pitch=settings.timerVoiceGender==='male'?0.7:1.2;u.volume=1;
+        const speak=()=>{
+          const voices=window.speechSynthesis.getVoices();
+          if(voices.length>0){
+            const lang=voices.filter(v=>v.lang.startsWith('en'));
+            const genVoices=lang.filter(v=>settings.timerVoiceGender==='male'?
+              /male|man|david|mark|daniel|james|guy/i.test(v.name):
+              /female|woman|samantha|karen|victoria|alice|zira/i.test(v.name));
+            if(genVoices.length>0)u.voice=genVoices[0];
+            else if(lang.length>0)u.voice=lang[0];
+          }
+          if(window.speechSynthesis.paused)window.speechSynthesis.resume();
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.speak(u);
+        };
+        if(window.speechSynthesis.getVoices().length>0){speak();}
+        else{window.speechSynthesis.onvoiceschanged=speak;}
+      }catch(e){}
+    };
+    if(fname){
+      try{
+        const audio=new Audio("sounds/"+encodeURIComponent(fname));
+        audio.volume=1;
+        const p=audio.play();
+        if(p&&p.catch)p.catch(()=>ttsFallback());
+      }catch(e){ttsFallback();}
+    }else{ttsFallback();}
     if(navigator.vibrate)navigator.vibrate([100,50,100,50,200]);
     return;
   }
