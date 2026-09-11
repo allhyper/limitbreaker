@@ -744,7 +744,7 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
       </div>
     </div>
     <button id="set-save-btn" onclick="saveSettingsBtn()" style="width:100%;padding:14px;background:var(--ac);border:none;border-radius:10px;font-family:var(--fd);font-size:20px;letter-spacing:2px;color:#fff;cursor:pointer;margin-top:4px;margin-bottom:4px">✓ 設定を保存</button>
-    <div style="text-align:center;margin-top:8px;font-size:14px;color:var(--t3)">LimitBreaker v18 ⚡</div>
+    <div style="text-align:center;margin-top:8px;font-size:14px;color:var(--t3)">LimitBreaker v19 ⚡</div>
   </div>
 </div>
 
@@ -1739,7 +1739,6 @@ let inlineTimerI=null,inlineTimerCur=0,inlineTimerTot=0,inlineTimerRunning=false
 let inlineTimerId=null;          // このタイマー1本の識別子
 let _notifiedTimerId=null;       // 終了処理済みのタイマーID（二重通知防止の要）
 let inlineTimerTO=null;          // 0秒ちょうどを狙う単発タイマー（intervalの間引き対策）
-let _restEndedPendingUi=null;    // 非表示中に終了したタイマーID（復帰時にオーバーレイを出す）
 const REST_STATE_KEY="restTimer";
 const NOTIF_ASK_KEY="notifAsked";
 const REST_TAG="lb-rest-end";
@@ -1808,24 +1807,6 @@ function _clearSystemNotification(){
   }catch(e){}
 }
 
-/* ── 前面表示中の終了オーバーレイ（ブラウザ通知とは別実装）── */
-function showRestOverlay(){
-  let ov=document.getElementById("rest-over");
-  if(!ov){
-    ov=document.createElement("div");
-    ov.id="rest-over";
-    ov.style.cssText="position:fixed;inset:0;z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(8,8,10,.94);padding:24px;text-align:center;cursor:pointer";
-    ov.innerHTML='<div style="font-family:var(--fd);font-size:46px;letter-spacing:3px;color:var(--ac);line-height:1.05">REST</div>'+
-      '<div style="font-family:var(--fd);font-size:46px;letter-spacing:3px;color:var(--ac);line-height:1.05;margin-bottom:16px">FINISHED</div>'+
-      '<div style="font-size:21px;font-weight:700;color:var(--te)">次のセットへ</div>'+
-      '<button id="rest-over-ok" style="margin-top:28px;padding:13px 46px;border-radius:10px;border:1px solid rgba(232,89,60,.6);background:var(--acd);color:var(--ac);font-size:17px;font-weight:700;cursor:pointer">OK</button>';
-    document.body.appendChild(ov);
-    ov.addEventListener("click",()=>hideRestOverlay());
-  }
-  ov.style.display="flex";
-}
-function hideRestOverlay(){const ov=document.getElementById("rest-over");if(ov)ov.style.display="none";}
-
 /* ── 状態の永続化（PWAが落ちて再起動しても終了を検知するため）── */
 function _saveRestState(){
   try{
@@ -1837,10 +1818,13 @@ function _saveRestState(){
   }catch(e){}
 }
 
-/* ── 終了処理：1タイマーにつき必ず1回だけ ── */
-function _fireRestEnd(){
+/* ── 終了処理：1タイマーにつき必ず1回だけ ──
+   0秒ちょうどに気づけたときだけ鳴らす。大きく遅れて気づいた場合
+   （バックグラウンドでJSが止まっていた等）は、今さら鳴らしても意味がないので
+   黙ってタイマーを終了する。復帰時の「後追い通知」は行わない。 */
+function _fireRestEnd(forceSilent){
   if(!inlineTimerId)return;
-  if(_notifiedTimerId===inlineTimerId)return;   // 二重通知防止
+  if(_notifiedTimerId===inlineTimerId)return;   // 1タイマーにつき1回だけ
   _notifiedTimerId=inlineTimerId;
   _alarmFired=true;
   clearInterval(inlineTimerI);clearTimeout(inlineTimerTO);
@@ -1848,27 +1832,26 @@ function _fireRestEnd(){
   const _c=document.getElementById("rest-timer-cnt");if(_c)_c.textContent=0;
   updateInlineBar(0,inlineTimerTot);
   try{S.remove(REST_STATE_KEY)}catch(e){}
-  const visible=(typeof document!=="undefined"&&document.visibilityState==="visible");
-  if(visible){
-    try{playAlarm()}catch(e){}
-    _vibrate([300,120,300,120,500]);
-    showRestOverlay();
-  }else{
-    _restEndedPendingUi=inlineTimerId;   // 復帰時にオーバーレイを出す
-    showRestNotification().then(ok=>{if(!ok){try{playAlarm()}catch(e){}}});
+  const late=!!forceSilent||(inlineTimerEnd>0&&(Date.now()-inlineTimerEnd)>5000);
+  const endedId=inlineTimerId;
+  if(!late){
+    const visible=(typeof document!=="undefined"&&document.visibilityState==="visible");
+    if(visible){
+      try{playAlarm()}catch(e){}
+    }else{
+      showRestNotification().then(ok=>{if(!ok){try{playAlarm()}catch(e){}}});
+    }
     _vibrate([300,120,300,120,500]);
   }
-  const endedId=inlineTimerId;
-  setTimeout(()=>{if(inlineTimerId===endedId)stopInlineTimer();},1200);
+  setTimeout(()=>{if(inlineTimerId===endedId)stopInlineTimer();},late?0:1200);
 }
 
 function toggleInlineTimer(){
   if(inlineTimerRunning||inlineTimerCur>0){stopInlineTimer();return;}
   try{getAudioCtx();}catch(e){}
   ensureNotifPermission();
-  hideRestOverlay();_clearSystemNotification();
+  _clearSystemNotification();
   inlineTimerId="t"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-  _restEndedPendingUi=null;
   inlineTimerCur=restSec;inlineTimerTot=restSec;inlineTimerRunning=true;_alarmFired=false;
   inlineTimerEnd=Date.now()+restSec*1000;      // ← 終了予定時刻を保持
   const bar=document.getElementById('rest-timer-bar');
@@ -1935,12 +1918,7 @@ document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState!=='visible'){_saveRestState();return;}
   _clearSystemNotification();
   if(inlineTimerId&&inlineTimerRunning&&inlineTimerEnd>0&&Date.now()>=inlineTimerEnd){
-    _fireRestEnd();               // 復帰した瞬間に終了判定（遅れを持ち越さない）
-    return;
-  }
-  if(_restEndedPendingUi){        // 非表示中に通知済み → 画面にも状態を出す（音は鳴らさない）
-    _restEndedPendingUi=null;
-    showRestOverlay();
+    _fireRestEnd(true);           // 既に0秒を過ぎている → 黙って終了（後追いで鳴らさない）
     return;
   }
   if(inlineTimerRunning&&inlineTimerEnd>0){
@@ -1958,11 +1936,8 @@ function restoreRestTimer(){
     if(!st||!st.endAt||!st.id)return;
     inlineTimerTot=st.total||restSec;
     if(Date.now()>=st.endAt){
+      // アプリが落ちている間に0秒を過ぎていた → 黙って破棄する（後追いで鳴らさない）
       try{S.remove(REST_STATE_KEY)}catch(e){}
-      if(!st.notified){
-        inlineTimerId=st.id;inlineTimerEnd=st.endAt;inlineTimerRunning=true;
-        setTimeout(()=>{_fireRestEnd();},500);
-      }
       return;
     }
     inlineTimerId=st.id;inlineTimerEnd=st.endAt;inlineTimerRunning=true;_alarmFired=false;

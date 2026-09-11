@@ -3,7 +3,7 @@
 //       Service Worker は OS / ブラウザに任意のタイミングで停止されるため保証にならない。
 //       休憩終了の判定と通知発火はページ側（終了予定時刻方式）が担当し、
 //       この SW は showNotification の受け皿と notificationclick の処理のみを担う。
-const CACHE_VERSION = 'lb-v18';
+const CACHE_VERSION = 'lb-v19';
 const CACHE_NAME = CACHE_VERSION;
 const APP_URL = '/limitbreaker/';
 
