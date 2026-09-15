@@ -373,14 +373,16 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
 
 /* ═══ ホーム：カレンダーを残り高さにフィットさせる（常に全月が見える） ═══ */
 .home-scroll{display:flex;flex-direction:column}
-#home-cal-card{flex:0 1 auto;min-height:0;display:flex;flex-direction:column}
-#home-month-grid-wrap{flex:0 1 auto;min-height:0;display:flex;flex-direction:column}
+#home-cal-card{flex:0 1 auto;min-height:221px;display:flex;flex-direction:column}
+#home-month-grid-wrap{flex:0 1 auto;min-height:203px;display:flex;flex-direction:column}
 /* 1行目＝曜日見出しはauto、以降の日付行が残りを等分する */
-#home-month-grid{flex:0 1 auto;min-height:0;height:min(calc(86vw - 45px),420px);grid-template-rows:auto;grid-auto-rows:1fr}
+#home-month-grid{flex:0 1 auto;min-height:170px;height:min(calc(86vw - 45px),420px);grid-template-rows:auto;grid-auto-rows:1fr}
 /* 日付を選ぶとカレンダーを圧縮し、内容パネルに高さを回す（月全体は表示したまま） */
-.home-scroll.det-open #home-month-grid{height:min(calc(58vw - 28px),300px)}
-.home-scroll.det-open #home-cal-det-wrap{min-height:200px}
-#home-month-grid .calcell{height:auto;min-height:26px}
+.home-scroll.det-open #home-month-grid{height:min(calc(58vw - 28px),300px);min-height:150px}
+.home-scroll.det-open #home-cal-card{min-height:201px}
+.home-scroll.det-open #home-month-grid-wrap{min-height:183px}
+.home-scroll.det-open #home-cal-det-wrap{min-height:160px}
+#home-month-grid .calcell{height:auto;min-height:0}
 /* ホーム：選択日の内容パネル */
 #home-det-head{display:none;align-items:center;justify-content:space-between;
   padding:7px 2px 5px;flex-shrink:0;border-top:0.5px solid var(--b);margin-top:6px}
@@ -417,7 +419,6 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
   .sk-n{font-size:24px}
   .cta-main{padding:13px}
   #home-cal-card{padding:8px 10px 6px}
-  #home-month-grid .calcell{min-height:20px}
   .home-scroll{padding-bottom:6px}
   .top{padding:6px 14px}
   .top .logo img{max-height:26px}
@@ -2476,7 +2477,19 @@ function toggleExGraph(idx){
   }).join("");
 
   const lineKg=pts.map(p=>`${xOf(p.t).toFixed(1)},${yOf(p.kg).toFixed(1)}`).join(" ");
-  const lineRm=pts.map(p=>`${xOf(p.t).toFixed(1)},${yOf(Math.min(p.rm||p.kg,yHi)).toFixed(1)}`).join(" ");
+  // 自己ベスト（推定1RM）の更新ライン：更新された時だけ上がる階段。
+  // その日ごとの推定1RMは調子で上下してノイズになるため、最高値の履歴だけを描く。
+  let _pb=0;
+  const pbVals=pts.map(p=>{ _pb=Math.max(_pb, p.rm||p.kg||0); return _pb; });
+  const linePb=(()=>{
+    const seg=[];
+    pts.forEach((p,i)=>{
+      const x=xOf(p.t), y=yOf(Math.min(pbVals[i],yHi));
+      if(i>0&&pbVals[i]!==pbVals[i-1]) seg.push(`${x.toFixed(1)},${yOf(Math.min(pbVals[i-1],yHi)).toFixed(1)}`); // 階段の縦線
+      seg.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+    });
+    return seg.join(" ");
+  })();
   const area=single?"":`<polygon points="${padL},${padT+plotH} ${lineKg} ${xOf(tMax).toFixed(1)},${padT+plotH}" fill="rgba(232,89,60,0.07)"/>`;
   // 最高重量の点を強調
   let bi=0;pts.forEach((p,i)=>{if(p.kg>pts[bi].kg||(p.kg===pts[bi].kg&&p.reps>pts[bi].reps))bi=i;});
@@ -2498,7 +2511,7 @@ function toggleExGraph(idx){
     </div>
     <div style="display:flex;gap:12px;margin-bottom:4px">
       <div style="display:flex;align-items:center;gap:4px"><div style="width:12px;height:2px;background:var(--ac);border-radius:1px"></div><span style="font-size:12px;color:var(--t2)">最高重量</span></div>
-      <div style="display:flex;align-items:center;gap:4px"><div style="width:12px;height:0;border-top:2px dashed var(--go)"></div><span style="font-size:12px;color:var(--t2)">推定1RM</span></div>
+      <div style="display:flex;align-items:center;gap:4px"><div style="width:12px;height:2px;background:var(--go);border-radius:1px"></div><span style="font-size:12px;color:var(--t2)">自己ベスト(推定1RM)</span></div>
       <div style="display:flex;align-items:center;gap:4px"><div style="width:10px;height:10px;border-radius:50%;background:var(--te)"></div><span style="font-size:12px;color:var(--t2)">この期間の最高</span></div>
     </div>
     <svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="display:block">
@@ -2507,7 +2520,7 @@ function toggleExGraph(idx){
       ${yMinor}
       ${yTicks}
       <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT+plotH}" stroke="var(--b2)" stroke-width="1"/>
-      ${pts.length>1?`<polyline points="${lineRm}" fill="none" stroke="var(--go)" stroke-width="1.8" stroke-dasharray="5,4" stroke-linejoin="round" stroke-linecap="round" opacity="0.8"/>`:""}
+      ${pts.length>1?`<polyline points="${linePb}" fill="none" stroke="var(--go)" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" opacity="0.85"/>`:""}
       ${pts.length>1?`<polyline points="${lineKg}" fill="none" stroke="var(--ac)" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round"/>`:""}
       ${dots}${xLabels}
     </svg>
@@ -2515,7 +2528,7 @@ function toggleExGraph(idx){
       <div>最初 <span style="color:var(--t3)">${_fmtDateShort(first.t,withYear)}</span> <span style="color:var(--ac)">${fmtW(first.kg)}×${first.reps}</span></div>
       <div>最新 <span style="color:var(--t3)">${_fmtDateShort(last.t,withYear)}</span> <span style="color:var(--ac)">${fmtW(last.kg)}×${last.reps}</span></div>
     </div>
-    <div style="font-size:12px;color:var(--t3);margin-top:5px">この期間の最高 ${fmtW(pts[bi].kg)} × ${pts[bi].reps}回（${_fmtDateShort(pts[bi].t,withYear)}）・${pts.length}回実施（タップで閉じる）</div>
+    <div style="font-size:12px;color:var(--t3);margin-top:5px">この期間の最高 ${fmtW(pts[bi].kg)} × ${pts[bi].reps}回（${_fmtDateShort(pts[bi].t,withYear)}）・自己ベスト(推定1RM) ${Math.round(pbVals[pbVals.length-1])}kg・${pts.length}回実施（タップで閉じる）</div>
   `;
 }
 
@@ -2683,6 +2696,8 @@ function renderHomeCalDet(){
     head.style.display='flex';
     document.getElementById('home-det-date').textContent=_fmtHomeDetDate(homeCalSel);
   }
+  // 画面が低い端末では内容が画面外に出るため、選択直後に見える位置まで送る
+  requestAnimationFrame(()=>{ try{ head&&head.scrollIntoView({behavior:'smooth',block:'nearest'}); }catch(e){} });
   // 全画面を開いたまま日付が変わった場合も同期する
   const full=document.getElementById('home-det-full');
   if(full&&full.classList.contains('show')){
