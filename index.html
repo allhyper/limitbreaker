@@ -1002,7 +1002,16 @@ function getBarAdd(equip){
 const toKg=v=>settings.unit==='lb'?+(v/2.20462).toFixed(2):v;
 const toDisp=kg=>settings.unit==='lb'?+(kg*2.20462).toFixed(1):kg;
 // 推定1RM（保守式）：高レップの過大評価を抑えるためレップを12で上限化。mcは種目補正(マシン0.9等)
-function est1RM(kg,reps,mc){const k=+kg||0;const r=Math.min(parseInt(reps)||0,12);if(k<=0||r<=0)return 0;return Math.round(k*(1+r/30)*(mc||1));}
+// 推定1RM：Brzycki式 kg × 36/(37-reps)。
+// 1レップなら係数1.0＝その重量そのもの（Epley式は1レップでも3%水増しされていた）。
+// レップ数は8で上限。9レップ以上は推定精度が落ち過大評価になるため、8レップ相当として保守的に扱う。
+const RM_REP_CAP=8;
+function est1RM(kg,reps,mc){
+  const k=+kg||0;const r=parseInt(reps)||0;
+  if(k<=0||r<=0)return 0;
+  const rr=Math.min(r,RM_REP_CAP);
+  return Math.round(k*36/(37-rr)*(mc||1));
+}
 
 function setUnit(u){settings.unit=u;S.set('settings',settings);document.getElementById('tog-kg').classList.toggle('on',u==='kg');document.getElementById('tog-lb').classList.toggle('on',u==='lb');document.getElementById('db-wu').textContent=u==='lb'?'lb':'kg';reRender()}
 
@@ -2385,7 +2394,7 @@ function _exSessionPoints(name,src){
       const exM=masterDB.find(e=>e.n===ex.n);
       const mc=exM&&exM.machine?0.9:1.0;
       const key=dateKey(r.date);
-      if(!byDay[key])byDay[key]={t:new Date(dateKey(r.date)+"T00:00:00").getTime(),key:key,kg:0,reps:0,rm:0,vol:0,sets:0};
+      if(!byDay[key])byDay[key]={t:new Date(dateKey(r.date)+"T00:00:00").getTime(),key:key,kg:0,reps:0,rm:0,rmKg:0,rmReps:0,mc:mc,vol:0,sets:0};
       const g=byDay[key];
       (ex.sets||[]).forEach(s=>{
         const rp=parseInt(s.reps||0);
@@ -2394,10 +2403,17 @@ function _exSessionPoints(name,src){
         g.sets++;
         g.vol+=calcSetVol(s);
         if(kg>g.kg||(kg===g.kg&&rp>g.reps)){g.kg=kg;g.reps=rp;}
-        const rm=est1RM(kg,rp,mc);
-        if(rm>g.rm)g.rm=rm;
+        // 推定に使うのは8レップ以下のセットだけ（高レップは推定が当てにならない）
+        if(rp<=RM_REP_CAP){
+          const rm=est1RM(kg,rp,mc);
+          if(rm>g.rm){g.rm=rm;g.rmKg=kg;g.rmReps=rp;}
+        }
       });
     });
+  });
+  // 8レップ以下のセットが1つもない日は、最高重量のセットで代用する
+  Object.values(byDay).forEach(g=>{
+    if(!g.rm&&g.kg>0){g.rm=est1RM(g.kg,g.reps,g.mc);g.rmKg=g.kg;g.rmReps=g.reps;}
   });
   return Object.values(byDay).filter(p=>p.kg>0).sort((a,b)=>a.t-b.t);
 }
@@ -2479,8 +2495,12 @@ function toggleExGraph(idx){
   const lineKg=pts.map(p=>`${xOf(p.t).toFixed(1)},${yOf(p.kg).toFixed(1)}`).join(" ");
   // 自己ベスト（推定1RM）の更新ライン：更新された時だけ上がる階段。
   // その日ごとの推定1RMは調子で上下してノイズになるため、最高値の履歴だけを描く。
-  let _pb=0;
-  const pbVals=pts.map(p=>{ _pb=Math.max(_pb, p.rm||p.kg||0); return _pb; });
+  let _pb=0,_pbSrc=null;
+  const pbVals=pts.map(p=>{
+    const v=p.rm||p.kg||0;
+    if(v>_pb){_pb=v;_pbSrc=p;}
+    return _pb;
+  });
   const linePb=(()=>{
     const seg=[];
     pts.forEach((p,i)=>{
@@ -2528,7 +2548,7 @@ function toggleExGraph(idx){
       <div>最初 <span style="color:var(--t3)">${_fmtDateShort(first.t,withYear)}</span> <span style="color:var(--ac)">${fmtW(first.kg)}×${first.reps}</span></div>
       <div>最新 <span style="color:var(--t3)">${_fmtDateShort(last.t,withYear)}</span> <span style="color:var(--ac)">${fmtW(last.kg)}×${last.reps}</span></div>
     </div>
-    <div style="font-size:12px;color:var(--t3);margin-top:5px">この期間の最高 ${fmtW(pts[bi].kg)} × ${pts[bi].reps}回（${_fmtDateShort(pts[bi].t,withYear)}）・自己ベスト(推定1RM) ${Math.round(pbVals[pbVals.length-1])}kg・${pts.length}回実施（タップで閉じる）</div>
+    <div style="font-size:12px;color:var(--t3);margin-top:5px">この期間の最高 ${fmtW(pts[bi].kg)} × ${pts[bi].reps}回（${_fmtDateShort(pts[bi].t,withYear)}）・自己ベスト(推定1RM) ${Math.round(pbVals[pbVals.length-1])}kg${_pbSrc&&_pbSrc.rmKg?`（${fmtW(_pbSrc.rmKg)}×${_pbSrc.rmReps}より）`:""}・${pts.length}回実施（タップで閉じる）</div>
   `;
 }
 
