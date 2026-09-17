@@ -84,8 +84,8 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
 /* 3 CTA buttons */
 .cta-main{width:100%;padding:17px;background:var(--ac);border:none;border-radius:var(--rp);font-family:var(--fb);color:#fff;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:17px;font-weight:700}
 .cta-main:active{opacity:.88}
-.cta-row{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:0}
-.cta-sub{padding:11px 12px;border-radius:12px;cursor:pointer;display:flex;align-items:center;gap:5px;border:0.5px solid var(--b2);background:var(--bg2);transition:all .15s}
+.cta-row{display:block;margin-bottom:0}
+.cta-sub{padding:10px 14px;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;border:0.5px solid var(--b2);background:var(--bg2);transition:all .15s}
 .cta-sub:active{background:var(--bg3)}
 .cta-sub .cs-icon{width:22px;height:22px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px}
 .cta-sub .cs-t{font-weight:600;color:var(--te);line-height:1.2;font-size:14px}
@@ -421,8 +421,13 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
   .top{padding:6px 14px}
   .top .logo img{max-height:26px}
   .cta-sub .cs-d{display:none}
-  .cta-sub{padding:9px 12px}
+  .cta-sub{padding:8px 12px}
   .nb{min-height:52px;padding:6px 2px 10px}
+  /* 画面が低い端末はカレンダーを一段小さくして、内容パネルの表示領域を確保する
+     （日付の選択有無で大きさは変わらない） */
+  #home-month-grid{height:min(calc(66vw - 36px),400px)}
+  #home-det-head{padding:6px 2px 4px;margin-top:4px}
+  .goal-card{padding:9px 14px}
 }
 </style>
 
@@ -445,17 +450,8 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
         <div style="flex:1"><div style="font-size:16px;font-weight:600;color:var(--gr)" id="ob-title">進行中のワークアウト</div><div style="font-size:13px;color:var(--t3)">タップして再開</div></div>
         <div style="font-family:var(--fd);font-size:15px;letter-spacing:1px;color:var(--gr)">再開 →</div>
       </div>
-      <div class="date-row">
-        <div>
-          <div class="date-big" id="h-date-big"></div>
-        </div>
-        <div class="month-box">
-          <div class="month-n"><span id="h-month-count">0</span><span class="month-u">回</span></div>
-          <div class="month-l">今月のトレーニング</div>
-        </div>
-      </div>
-      <!-- 目標カード（日付の直下・固定） -->
-      <div class="goal-card" id="goal-card" onclick="startGoalEdit()" style="margin-top:6px">
+      <!-- 目標カード -->
+      <div class="goal-card" id="goal-card" onclick="startGoalEdit()">
         <div class="goal-text" id="goal-display"></div>
       </div>
     </div>
@@ -491,13 +487,9 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
       </button>
       <!-- サブボタン -->
       <div class="cta-row">
-        <div class="cta-sub" style="background:linear-gradient(135deg,#1a1010,#0f0a0a);border-color:rgba(232,89,60,.25)" onclick="openRoutineModal()">
+        <div class="cta-sub" onclick="openRoutineModal()">
           <div class="cs-icon" style="background:var(--acd);color:var(--ac)">📋</div>
-          <div><div class="cs-t" id="cta-r-t">ルーティンから</div><div class="cs-d" id="cta-r-d">保存済みメニュー</div></div>
-        </div>
-        <div class="cta-sub" style="background:linear-gradient(135deg,#0f1218,#0a0e14);border-color:var(--b2)" onclick="startFromLast()">
-          <div class="cs-icon" style="background:var(--bld);color:var(--bl)">🔄</div>
-          <div><div class="cs-t" id="cta-c-t">前回を複製</div><div class="cs-d" id="cta-c-d">前回の内容で開始</div></div>
+          <div class="cs-t" id="cta-r-t">ルーティンから</div>
         </div>
       </div>
     </div><!-- /home-fixed-bottom -->
@@ -1105,16 +1097,6 @@ const openModal=id=>{const e=document.getElementById(id);if(e)e.classList.add('s
 
 /* ═══ HOME ═══ */
 function renderHome(){
-  const now=new Date();
-  const wd=['日','月','火','水','木','金','土'];
-  document.getElementById('h-date-big').textContent=`${now.getMonth()+1}月 ${now.getDate()}日（${wd[now.getDay()]}）`;
-  // 今月のトレーニング回数：同じ日に複数記録があっても1回として数える（カレンダーの表示と一致させる）
-  const mDays=new Set(records.filter(r=>{
-    const d=new Date(r.date);
-    return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
-  }).map(r=>dateKey(r.date)));
-  const mcEl=document.getElementById('h-month-count');
-  if(mcEl)mcEl.textContent=mDays.size;
   document.getElementById('ongoing-banner').style.display=session?'flex':'none';
   renderHomeCal();
   renderGoalCard();
@@ -1218,16 +1200,6 @@ function startRoutine(id){
   _ensureSid();saveDraft();
   closeModal('rout-modal');nav('session');renderSession();startElapsedTimer();
 }
-function startFromLast(){
-  if(!records.length){alert('まだ記録がありません');return}
-  const last=[...records].sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
-  sessExercises=last.exercises.map(ex=>({...ex,sets:ex.sets.map(s=>({kg:s.kg,reps:'',note:'',done:false}))}));
-  sessIdx=0;sessName=last.progName||'前回複製';sessStart=Date.now();
-  session={name:sessName,exs:sessExercises,idx:0,start:Date.now()};
-  _ensureSid();saveDraft();
-  nav('session');renderSession();startElapsedTimer();
-}
-
 /* ═══ SESSION ═══ */
 function startElapsedTimer(){clearInterval(elapsedI);elapsedI=setInterval(()=>{if(!session)return;const s=Math.floor((Date.now()-session.start)/1000);const m=Math.floor(s/60);const sec=s%60;document.getElementById('sess-elapsed').textContent=m+':'+(sec<10?'0':'')+sec},1000)}
 function renderSession(){
@@ -2713,8 +2685,6 @@ function renderHomeCalDet(){
     head.style.display='flex';
     document.getElementById('home-det-date').textContent=_fmtHomeDetDate(homeCalSel);
   }
-  // 画面が低い端末では内容が画面外に出るため、選択直後に見える位置まで送る
-  requestAnimationFrame(()=>{ try{ el.scrollIntoView({behavior:'smooth',block:'nearest'}); }catch(e){} });
   // 全画面を開いたまま日付が変わった場合も同期する
   const full=document.getElementById('home-det-full');
   if(full&&full.classList.contains('show')){
