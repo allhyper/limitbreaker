@@ -82,13 +82,13 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
 .ts-n.hi{color:var(--ac)}
 .ts-l{color:var(--t3);text-transform:uppercase;margin-top:2px;font-size:11px}
 /* 3 CTA buttons */
-.cta-main{width:100%;padding:17px;background:var(--ac);border:none;border-radius:var(--rp);font-family:var(--fb);color:#fff;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:17px;font-weight:700}
+.cta-main{width:100%;padding:15px 10px;background:var(--ac);border:none;border-radius:var(--rp);font-family:var(--fb);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-size:15px;font-weight:700;white-space:nowrap}
 .cta-main:active{opacity:.88}
-.cta-row{display:block;margin-bottom:0}
-.cta-sub{padding:10px 14px;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;border:0.5px solid var(--b2);background:var(--bg2);transition:all .15s}
+.cta-row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:stretch;margin-bottom:0}
+.cta-sub{padding:10px 12px;border-radius:var(--rp);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;border:0.5px solid var(--b2);background:var(--bg2);transition:all .15s;white-space:nowrap}
 .cta-sub:active{background:var(--bg3)}
-.cta-sub .cs-icon{width:22px;height:22px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px}
-.cta-sub .cs-t{font-weight:600;color:var(--te);line-height:1.2;font-size:14px}
+.cta-sub .cs-icon{width:15px;height:15px;flex-shrink:0;color:var(--ac)}
+.cta-sub .cs-t{font-weight:600;color:var(--te);line-height:1.2;font-size:13px}
 .cta-sub .cs-d{color:var(--t3);margin-top:1px;font-size:12px}
 .ongoing-banner{background:var(--bg2);border:0.5px solid rgba(76,175,80,.5);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:9px;margin-bottom:8px;cursor:pointer}
 .ongoing-dot{width:7px;height:7px;border-radius:50%;background:var(--gr);flex-shrink:0;animation:blink 1.2s infinite}
@@ -379,8 +379,11 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
 #home-month-grid{flex:0 0 auto;height:min(calc(80vw - 40px),400px);grid-template-rows:auto;grid-auto-rows:1fr}
 /* 日付を選んでもカレンダーの大きさは変えない。
    内容パネルは残りの高さに入り、入りきらない分はページ側をスクロールする */
-.home-scroll.det-open #home-cal-det-wrap{min-height:160px}
+.home-scroll.det-open #home-cal-det-wrap{min-height:136px}
 #home-month-grid .calcell{height:auto;min-height:0}
+/* ホーム：下部固定ボタン */
+.home-fixed-bottom{flex-shrink:0;padding:0 16px calc(8px + env(safe-area-inset-bottom,0px))}
+
 /* ホーム：選択日の内容パネル */
 #home-det-head{display:none;align-items:center;justify-content:space-between;
   padding:7px 2px 5px;flex-shrink:0;border-top:0.5px solid var(--b);margin-top:6px}
@@ -415,19 +418,21 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
   .rec-card{padding:8px 14px}
   .sk{padding:6px 6px}
   .sk-n{font-size:24px}
-  .cta-main{padding:13px}
+  .cta-main{padding:12px 8px}
   #home-cal-card{padding:8px 10px 6px}
   .home-scroll{padding-bottom:6px}
   .top{padding:6px 14px}
   .top .logo img{max-height:26px}
   .cta-sub .cs-d{display:none}
-  .cta-sub{padding:8px 12px}
+  .cta-sub{padding:8px 10px}
   .nb{min-height:52px;padding:6px 2px 10px}
   /* 画面が低い端末はカレンダーを一段小さくして、内容パネルの表示領域を確保する
      （日付の選択有無で大きさは変わらない） */
   #home-month-grid{height:min(calc(66vw - 36px),400px)}
   #home-det-head{padding:6px 2px 4px;margin-top:4px}
   .goal-card{padding:9px 14px}
+  /* 低背端末では内容パネルの最小高さを下げ、ホーム全体がスクロールしないようにする */
+  .home-scroll.det-open #home-cal-det-wrap{min-height:96px}
 }
 </style>
 
@@ -478,19 +483,17 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
       </div>
       <div id="home-cal-det-wrap"></div>
     </div><!-- /home-scroll -->
-    <!-- ZONE 3: 固定ボトム（開始ボタン + サブボタン） -->
+    <!-- ZONE 3: 固定ボトム（左：ルーティン / 右：トレーニング開始） -->
     <div class="home-fixed-bottom">
-      <!-- 開始ボタン -->
-      <button class="cta-main" onclick="openExSelPop()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><polygon points="10,8 16,12 10,16" fill="currentColor"/></svg>
-        <span id="cta-main-txt">トレーニング開始</span>
-      </button>
-      <!-- サブボタン -->
       <div class="cta-row">
         <div class="cta-sub" onclick="openRoutineModal()">
-          <div class="cs-icon" style="background:var(--acd);color:var(--ac)">📋</div>
-          <div class="cs-t" id="cta-r-t">ルーティンから</div>
+          <svg class="cs-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="5" y="4" width="14" height="17" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M9 9h6M9 13h6M9 17h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <div class="cs-t" id="cta-r-t">ルーティン</div>
         </div>
+        <button class="cta-main" onclick="openExSelPop()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><polygon points="10,8 16,12 10,16" fill="currentColor"/></svg>
+          <span id="cta-main-txt">トレーニング開始</span>
+        </button>
       </div>
     </div><!-- /home-fixed-bottom -->
   </div>
