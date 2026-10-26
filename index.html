@@ -804,7 +804,7 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
       </div>
     </div>
     <button id="set-save-btn" onclick="saveSettingsBtn()" style="width:100%;padding:14px;background:var(--ac);border:none;border-radius:10px;font-family:var(--fd);font-size:20px;letter-spacing:2px;color:#fff;cursor:pointer;margin-top:4px;margin-bottom:4px">✓ 設定を保存</button>
-    <div style="text-align:center;margin-top:8px;font-size:14px;color:var(--t3)">LimitBreaker v19 ⚡</div>
+    <div style="text-align:center;margin-top:8px;font-size:14px;color:var(--t3)">LimitBreaker <span id="app-ver"></span> ⚡</div>
   </div>
 </div>
 
@@ -835,7 +835,7 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
     <div class="fm-emoji">🔥</div>
     <div class="fm-title" id="fm-title">完了！</div>
     <div class="fm-sub" id="fm-sub">今日も最高のワークアウト</div>
-    <div class="fm-date"><label for="fm-date">実施日</label><input type="date" id="fm-date" onchange="onFmDateChange(this.value)"></div>
+    <div class="fm-date"><label for="fm-date">実施日</label><input type="date" id="fm-date" oninput="onFmDateChange(this.value)" onchange="onFmDateChange(this.value)"></div>
     <div class="fm-date-note" id="fm-date-note"></div>
     <div class="fm-grid" id="fm-grid"></div>
     <div class="fm-praise" id="fm-praise"></div>
@@ -1559,6 +1559,9 @@ function markDraftDirty(){_draftDirty=true;_touchSess();}
    最終操作から STALE_MS を超えたセッションは「放置」とみなし、放置分を記録時間に含めない。
    記録日は開始日を既定とし、終了画面で手動修正できる（_manualDate） */
 const STALE_MS=2*60*60*1000;
+/* アプリのバージョン（sw.js の CACHE_VERSION「lb-vNN」と必ず同じ番号にする） */
+const APP_VERSION="v30";
+try{document.addEventListener("DOMContentLoaded",()=>{const e=document.getElementById("app-ver");if(e)e.textContent=APP_VERSION;});const _ve=document.getElementById("app-ver");if(_ve)_ve.textContent=APP_VERSION;}catch(e){}
 function _initSessTimes(){if(!session)return;const n=Date.now();if(!session.startedAt)session.startedAt=n;session.lastActAt=n;session.actMs=Math.max(0,n-(session.start||n));}
 function _touchSess(){if(!session)return;const n=Date.now();session.lastActAt=n;session.actMs=Math.max(0,n-(session.start||n));session._staleNotified=false;}
 function _sessStale(){return!!(session&&session.lastActAt&&Date.now()-session.lastActAt>STALE_MS);}
@@ -1732,6 +1735,13 @@ function onFmDateChange(v){
   if(session){session._manualDate=v;saveDraft();}
   _renderFmDate();
 }
+/* 保存時は入力欄の値を正とする：表示上の日付と保存される日付を必ず一致させる */
+function _syncFmDate(){
+  const p=window._pendingRec;const inp=document.getElementById("fm-date");
+  if(!p||!inp)return;
+  const v=inp.value;
+  if(v&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&v!==dateKey(p.date))onFmDateChange(v);
+}
 
 function endSession(){
   if(!session)return;
@@ -1775,6 +1785,7 @@ function endSession(){
 }
 function backToSession(){document.getElementById('fm-bg').classList.remove('show');session.start=Date.now()-((window._pendingRec?.elapsed||0)*60000);startElapsedTimer();nav('session')}
 function saveAndGoHome(){
+  _syncFmDate();
   const pend=window._pendingRec;
   if(pend){
     const editId=pend._editId;
@@ -1803,7 +1814,7 @@ function saveAndGoHome(){
     }
     window._pendingRec=null;
     clearDraft();
-    showToast("ワークアウトを保存しました");
+    showToast(dateKey(rec.date)===dateKey(Date.now())?"ワークアウトを保存しました":_fmtMD(new Date(rec.date).getTime())+"の記録として保存しました");
   }else{
     clearDraft();
   }
