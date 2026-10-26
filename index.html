@@ -180,6 +180,10 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
 .fm-stat{background:var(--bg2);border:0.5px solid var(--b);border-radius:12px;padding:10px;text-align:center}
 .fm-n{font-family:var(--fd);letter-spacing:1px;line-height:1;margin-bottom:2px;font-size:30px}
 .fm-l{color:var(--t3);text-transform:uppercase;font-size:11px}
+.fm-date{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg2);border:0.5px solid var(--b);border-radius:12px;padding:8px 12px;margin-bottom:8px}
+.fm-date label{color:var(--t2);font-size:14px;font-weight:600}
+.fm-date input{background:var(--bg3);color:var(--te);border:0.5px solid var(--b2);border-radius:8px;padding:6px 8px;font-size:15px;color-scheme:dark;font-family:inherit}
+.fm-date-note{display:none;color:var(--ac);font-size:12px;line-height:1.5;margin-bottom:10px;text-align:left;white-space:pre-line}
 .fm-praise{background:var(--bg3);border-radius:12px;padding:10px;margin-bottom:12px;color:var(--te);line-height:1.6;text-align:left;font-size:14px}
 .fm-btns{display:flex;gap:7px}
 .fm-back{flex:1;padding:10px;background:var(--bg3);border:0.5px solid var(--b2);border-radius:12px;font-family:var(--fb);color:var(--t2);cursor:pointer;font-size:15px;font-weight:600}
@@ -831,6 +835,8 @@ html,body{height:100dvh;overflow:hidden;background:var(--bg);color:var(--te);fon
     <div class="fm-emoji">🔥</div>
     <div class="fm-title" id="fm-title">完了！</div>
     <div class="fm-sub" id="fm-sub">今日も最高のワークアウト</div>
+    <div class="fm-date"><label for="fm-date">実施日</label><input type="date" id="fm-date" onchange="onFmDateChange(this.value)"></div>
+    <div class="fm-date-note" id="fm-date-note"></div>
     <div class="fm-grid" id="fm-grid"></div>
     <div class="fm-praise" id="fm-praise"></div>
     <div class="fm-btns">
@@ -1155,6 +1161,7 @@ function calcStreak(){
 
 /* ═══ EXERCISE SELECT (部位→種目 for starting workout) ═══ */
 function openExSelPop(){
+  if(_guardUnsaved(openExSelPop))return;
   espF='';renderEspFilter();openModal('ex-sel-pop');
   // start new session
   sessExercises=[];sessIdx=0;sessName='フリートレーニング';sessStart=Date.now();
@@ -1180,7 +1187,7 @@ function toggleEspEx(id){
 function startFreeSession(){
   if(!sessExercises.length){alert('種目を選択してください');return}
   session={name:sessName,exs:sessExercises,idx:0,start:Date.now()};
-  _ensureSid();saveDraft();
+  _initSessTimes();_ensureSid();saveDraft();
   closeModal('ex-sel-pop');nav('session');renderSession();startElapsedTimer();
 }
 // Modify esp-close to start session
@@ -1189,6 +1196,7 @@ document.getElementById('esp-title').textContent='種目を選択';
 
 /* ═══ ROUTINE MODAL ═══ */
 function openRoutineModal(){
+  if(_guardUnsaved(openRoutineModal))return;
   const sorted=[...routines].sort((a,b)=>{if(!a.lastUsed&&!b.lastUsed)return 0;if(!a.lastUsed)return 1;if(!b.lastUsed)return-1;return new Date(b.lastUsed)-new Date(a.lastUsed)});
   const colors={Push:'rb-push',Pull:'rb-pull',Legs:'rb-legs',Full:'rb-full'};
   document.getElementById('rm-list').innerHTML=sorted.map(r=>{const exNames=r.exIds.map(id=>masterDB.find(m=>m.id===id)?.n||'?').join(' · ');return`<div class="rm-item"><div style="flex:1;min-width:0"><div class="rmi-name">${r.name} <span class="rout-badge ${colors[r.type]||'rb-push'}" style="font-size:17px">${r.type}</span></div><div class="rmi-ex">${exNames}</div></div><button class="rmi-start" onclick="startRoutine('${r.id}')">開始</button></div>`}).join('');
@@ -1200,7 +1208,7 @@ function startRoutine(id){
   sessExercises=r.exIds.map(mid=>{const ex=getEx(mid);return{...ex,sets:Array.from({length:ex.sets||settings.defaultSets},()=>({kg:ex.weight||0,reps:'',note:'',done:false}))}});
   sessIdx=0;sessName=r.name;sessStart=Date.now();
   session={name:sessName,exs:sessExercises,idx:0,start:Date.now()};
-  _ensureSid();saveDraft();
+  _initSessTimes();_ensureSid();saveDraft();
   closeModal('rout-modal');nav('session');renderSession();startElapsedTimer();
 }
 /* ═══ SESSION ═══ */
@@ -1434,7 +1442,7 @@ function performSessExDelete(){
   if(!session)return;
   session.exs.splice(session.idx,1);
   session.idx=Math.min(session.idx,session.exs.length-1);
-  renderSession();saveDraft();
+  renderSession();_touchSess();saveDraft();
 }
 function delSessEx(){
   if(!session)return;
@@ -1454,7 +1462,7 @@ function addSessSet(){
   const last=ex.sets[ex.sets.length-1]||{kg:0};
   // kg（重量）のみコピー、回数はコピーしない
   ex.sets.push({kg:last.kg,reps:'',cheat:0,assist:0,posNeg:'',note:'',done:false});
-  refreshSetRows();saveDraft();
+  refreshSetRows();_touchSess();saveDraft();
   // 追加した行が見切れないよう #setrows を最下部へ自動スクロール（追加を即確認できる）
   const sr=document.getElementById("setrows");
   if(sr)requestAnimationFrame(()=>{try{sr.scrollTo({top:sr.scrollHeight,behavior:"smooth"});}catch(e){sr.scrollTop=sr.scrollHeight;}});
@@ -1464,7 +1472,7 @@ function delSessSet(i){
   const ex=session.exs[session.idx];
   if(ex.sets.length<=1)return;
   ex.sets.splice(i,1);
-  refreshSetRows();saveDraft();
+  refreshSetRows();_touchSess();saveDraft();
 }
 function adjRest(d){restSec=Math.max(15,Math.min(300,restSec+d));const rv=document.getElementById('sess-rv');if(rv)rv.textContent=restSec+'s';if(session){session.exs[session.idx].restSec=restSec;markDraftDirty();}}
 
@@ -1481,7 +1489,7 @@ function addExToSess(mid){
   const ex=getEx(mid);
   session.exs.push({...ex,sets:Array.from({length:ex.sets||settings.defaultSets},()=>({kg:ex.weight||0,reps:'',cheat:0,assist:0,posNeg:'',note:'',done:false}))});
   session.idx=session.exs.length-1;
-  renderSession();saveDraft();closeModal('qae-pop');
+  renderSession();_touchSess();saveDraft();closeModal('qae-pop');
 }
 
 function cancelSession(){
@@ -1527,6 +1535,10 @@ function _sessionSnapshot(){
     elapsedMs:Math.max(0,Date.now()-(session.start||Date.now())),
     _editId:session._editId||null,
     _baseElapsed:session._baseElapsed||0,
+    startedAt:session.startedAt||null,
+    lastActAt:session.lastActAt||null,
+    actMs:(session.actMs!=null?session.actMs:null),
+    manualDate:session._manualDate||null,
     savedAt:new Date().toISOString()
   };
 }
@@ -1539,7 +1551,67 @@ function saveDraft(){
     return true;
   }catch(e){return false}
 }
-function markDraftDirty(){_draftDirty=true;}
+function markDraftDirty(){_draftDirty=true;_touchSess();}
+/* ═══ 記録忘れ対応（開始日時・最終操作時刻）═══
+   startedAt：実際に開始した時刻。記録日の既定値になる
+   lastActAt：最後にセット等を操作した時刻
+   actMs    ：最後の操作時点までの経過時間（放置時間を含まない）
+   最終操作から STALE_MS を超えたセッションは「放置」とみなし、放置分を記録時間に含めない。
+   記録日は開始日を既定とし、終了画面で手動修正できる（_manualDate） */
+const STALE_MS=2*60*60*1000;
+function _initSessTimes(){if(!session)return;const n=Date.now();if(!session.startedAt)session.startedAt=n;session.lastActAt=n;session.actMs=Math.max(0,n-(session.start||n));}
+function _touchSess(){if(!session)return;const n=Date.now();session.lastActAt=n;session.actMs=Math.max(0,n-(session.start||n));session._staleNotified=false;}
+function _sessStale(){return!!(session&&session.lastActAt&&Date.now()-session.lastActAt>STALE_MS);}
+function _rebaseStale(){if(!_sessStale())return false;session.start=Date.now()-(session.actMs||0);return true;}
+function _draftTimes(d){
+  const sv=d.savedAt?new Date(d.savedAt).getTime():Date.now();
+  const act=d.actMs!=null?d.actMs:(d.elapsedMs||0);
+  const last=d.lastActAt||sv;
+  const st=d.startedAt||Math.max(0,sv-(d.elapsedMs||0));
+  return{startedAt:st,lastActAt:last,actMs:act,stale:Date.now()-last>STALE_MS};
+}
+function _fmtMD(ms){const d=new Date(ms);return`${d.getMonth()+1}/${d.getDate()}（${["日","月","火","水","木","金","土"][d.getDay()]}）`;}
+function _dateAt(key,baseMs){const p=key.split("-").map(Number);const b=new Date(baseMs);return new Date(p[0],p[1]-1,p[2],b.getHours(),b.getMinutes(),b.getSeconds()).toISOString();}
+function _validSetCount(exs){let n=0;(exs||[]).forEach(ex=>(ex.sets||[]).forEach(s=>{if(parseInt(s.reps||0)>0)n++}));return n;}
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState!=="visible"||!session)return;
+  if(_rebaseStale()&&!session._staleNotified){
+    session._staleNotified=true;
+    showToast(`${_fmtMD(session.startedAt)}開始のワークアウトが未保存です\n放置時間は記録時間に含めません`);
+  }
+});
+/* 未保存のワークアウトがある状態で新規開始しようとしたら確認する（上書き消失の防止） */
+function _guardUnsaved(next){
+  if(session)saveDraft();
+  const d=getDraft();
+  if(!d)return false;
+  _showUnsavedDialog(d,next);
+  return true;
+}
+function _showUnsavedDialog(d,next){
+  const old=document.getElementById("lb-unsaved");if(old)old.remove();
+  const t=_draftTimes(d);const md=_fmtMD(t.startedAt);const canSave=_validSetCount(d.exs)>0;
+  const bg=document.createElement("div");bg.id="lb-unsaved";
+  bg.style.cssText="position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:16px";
+  const btn=(id,label,primary)=>`<button id="${id}" style="width:100%;padding:11px;border-radius:10px;margin-top:8px;font-size:15px;font-weight:700;cursor:pointer;${primary?"border:0.5px solid rgba(232,89,60,.5);background:var(--acd);color:var(--ac)":"border:0.5px solid var(--b2);background:var(--bg3);color:var(--t2)"}">${label}</button>`;
+  bg.innerHTML='<div style="width:100%;max-width:340px;background:var(--bg2);border:1px solid rgba(232,89,60,.55);border-radius:14px;padding:16px">'+
+    '<div style="font-size:16px;font-weight:700;color:var(--ac);margin-bottom:4px">未保存のワークアウトがあります</div>'+
+    '<div id="lb-unsaved-sum" style="font-size:13px;color:var(--t2);line-height:1.5;margin-bottom:4px"></div>'+
+    btn("lb-us-resume","続きから再開",true)+
+    (canSave?btn("lb-us-save","保存して新規開始",false):"")+
+    btn("lb-us-del","破棄して新規開始",false)+
+    btn("lb-us-cancel","キャンセル",false)+"</div>";
+  document.body.appendChild(bg);
+  document.getElementById("lb-unsaved-sum").textContent=md+"開始："+_draftSummary(d);
+  const close=()=>{bg.remove();const r=document.getElementById("lb-resume");if(r)r.remove();};
+  document.getElementById("lb-us-resume").onclick=()=>{close();if(session){_rebaseStale();nav("session");startElapsedTimer();}else resumeDraft();};
+  if(canSave)document.getElementById("lb-us-save").onclick=()=>{close();if(saveDraftQuick())next();};
+  document.getElementById("lb-us-del").onclick=()=>{
+    if(!confirm("未保存のワークアウトを破棄します。この操作は取り消せません。よろしいですか？"))return;
+    close();cancelSession();next();
+  };
+  document.getElementById("lb-us-cancel").onclick=()=>bg.remove();
+}
 function clearDraft(){try{S.remove(DRAFT_KEY)}catch(e){}_draftDirty=false;}
 function getDraft(){try{const d=S.get(DRAFT_KEY);if(!d||!d.exs||!Array.isArray(d.exs)||!d.exs.length)return null;return d}catch(e){return null}}
 /* 入力のたびに書き込むと重いので、変更フラグ＋定期保存。構造変更は即時保存 */
@@ -1581,34 +1653,84 @@ function _showResumeBanner(){
   const d=getDraft();
   if(!d)return;
   if(document.getElementById("lb-resume"))return;
+  const t=_draftTimes(d);const md=_fmtMD(t.startedAt);
+  const quick=t.stale&&_validSetCount(d.exs)>0;
   const box=document.createElement("div");
   box.id="lb-resume";
   box.style.cssText="position:fixed;left:8px;right:8px;bottom:72px;z-index:9998;background:var(--bg2);border:1px solid rgba(232,89,60,.55);border-radius:12px;padding:12px 14px;box-shadow:0 8px 28px rgba(0,0,0,.55)";
-  box.innerHTML='<div style="font-size:15px;font-weight:700;color:var(--ac);margin-bottom:3px">未保存のワークアウトがあります</div>'+
+  box.innerHTML='<div id="lb-resume-ttl" style="font-size:15px;font-weight:700;color:var(--ac);margin-bottom:3px"></div>'+
     '<div id="lb-resume-sum" style="font-size:13px;color:var(--t2);margin-bottom:10px;line-height:1.5"></div>'+
+    (quick?'<button id="lb-resume-save" style="width:100%;padding:10px;margin-bottom:8px;border-radius:8px;border:none;background:var(--ac);color:#fff;font-size:15px;font-weight:700;cursor:pointer"></button>':'')+
     '<div style="display:flex;gap:8px">'+
     '<button id="lb-resume-go" style="flex:1;padding:9px;border-radius:8px;border:0.5px solid rgba(232,89,60,.5);background:var(--acd);color:var(--ac);font-size:14px;font-weight:700;cursor:pointer">続きから再開</button>'+
     '<button id="lb-resume-del" style="flex:1;padding:9px;border-radius:8px;border:0.5px solid var(--b2);background:var(--bg3);color:var(--t3);font-size:14px;cursor:pointer">破棄</button>'+
     '</div>';
   document.body.appendChild(box);
+  document.getElementById("lb-resume-ttl").textContent=t.stale?md+"のワークアウトが未保存です":"未保存のワークアウトがあります";
   document.getElementById("lb-resume-sum").textContent=_draftSummary(d);
+  if(quick){
+    const sb=document.getElementById("lb-resume-save");
+    sb.textContent=md+"の記録として保存";
+    sb.onclick=()=>{box.remove();if(saveDraftQuick())showToast(md+"の記録として保存しました");};
+  }
   document.getElementById("lb-resume-go").onclick=()=>{box.remove();resumeDraft();};
   document.getElementById("lb-resume-del").onclick=()=>{
     if(!confirm("未保存のワークアウトを破棄します。この操作は取り消せません。よろしいですか？"))return;
     clearDraft();box.remove();
   };
 }
-function resumeDraft(){
-  const d=getDraft();
-  if(!d){showToast("下書きが見つかりませんでした","err");return}
+function _restoreDraft(d){
+  const _rb=document.getElementById("lb-resume");if(_rb)_rb.remove();
   sessExercises=d.exs;
   sessIdx=d.idx||0;
   sessName=d.name||"ワークアウト";
   restSec=d.restSec||restSec;
   session={name:sessName,exs:sessExercises,idx:Math.min(d.idx||0,d.exs.length-1),start:Date.now()-(d.elapsedMs||0),sid:d.sid,_editId:d._editId||undefined,_baseElapsed:d._baseElapsed||0};
   if(!session._editId)delete session._editId;
+  const t=_draftTimes(d);
+  session.startedAt=t.startedAt;session.lastActAt=t.lastActAt;session.actMs=t.actMs;
+  if(d.manualDate)session._manualDate=d.manualDate;
+  // 放置後の再開：放置時間を経過時間から除く
+  if(t.stale){session.start=Date.now()-t.actMs;session._staleNotified=true;}
+  return t;
+}
+function resumeDraft(){
+  const d=getDraft();
+  if(!d){showToast("下書きが見つかりませんでした","err");return}
+  const t=_restoreDraft(d);
   nav("session");renderSession();startElapsedTimer();
-  showToast("ワークアウトを再開しました");
+  showToast(t.stale?_fmtMD(t.startedAt)+"のワークアウトを再開しました":"ワークアウトを再開しました");
+}
+/* 下書きを画面を開かずにそのまま保存（記録日＝開始日、時間＝最後の入力まで） */
+function saveDraftQuick(){
+  const d=getDraft();if(!d)return false;
+  _restoreDraft(d);
+  endSession();
+  saveAndGoHome();
+  return !session&&!window._pendingRec;
+}
+/* 終了画面：実施日の表示と手動修正 */
+function _renderFmDate(){
+  const p=window._pendingRec;if(!p)return;
+  const inp=document.getElementById("fm-date");const note=document.getElementById("fm-date-note");const sub=document.getElementById("fm-sub");
+  const key=dateKey(p.date);const today=dateKey(Date.now());const md=_fmtMD(new Date(p.date).getTime());
+  if(inp){inp.max=today;inp.value=key;}
+  const msgs=[];
+  if(window._fmStale&&session&&session.startedAt)msgs.push("放置時間を除き、最後の入力までの時間で記録します");
+  if(key!==today)msgs.push(md+"の記録として保存します");
+  if(note){note.textContent=msgs.join("\n");note.style.display=msgs.length?"block":"none";}
+  if(sub)sub.textContent=key===today?"今日も最高のワークアウト":md+"のワークアウト";
+}
+function onFmDateChange(v){
+  const p=window._pendingRec;if(!p)return;
+  const today=dateKey(Date.now());
+  if(!v||!/^\d{4}-\d{2}-\d{2}$/.test(v)){_renderFmDate();return;}
+  if(v>today){showToast("未来の日付は選べません","err");_renderFmDate();return;}
+  const orig=p._editId?records.find(r=>r&&r._id===p._editId):null;
+  const base=orig?new Date(orig.date).getTime():((session&&session.startedAt)||Date.now());
+  p.date=_dateAt(v,base);
+  if(session){session._manualDate=v;saveDraft();}
+  _renderFmDate();
 }
 
 function endSession(){
@@ -1618,7 +1740,14 @@ function endSession(){
   let totalVol=0,totalSets=0;
   session.exs.forEach(ex=>ex.sets.forEach(s=>{const rp=parseInt(s.reps||0);if(rp>0){totalVol+=calcSetVol(s);totalSets++;}}));
   const validExCount=session.exs.filter(ex=>ex.sets.some(s=>parseInt(s.reps||0)>0)).length;
+  // 放置セッションは放置時間を除く（最後の入力時点までの時間）
+  const _stale=_rebaseStale();window._fmStale=_stale;
   const elapsed=Math.floor((Date.now()-session.start)/60000);
+  // 記録日：編集なら元の日付、新規なら開始日。手動修正があればその日付
+  const _eid0=session._editId||null;const _orig0=_eid0?records.find(r=>r&&r._id===_eid0):null;
+  const _baseMs=_orig0?new Date(_orig0.date).getTime():(session.startedAt||Date.now());
+  const _dateISO=session._manualDate?_dateAt(session._manualDate,_baseMs):new Date(_baseMs).toISOString();
+  const _dms=new Date(_dateISO).getTime();
   const lbls=['種目数','総セット','ボリューム','時間'];
   document.getElementById('fm-grid').innerHTML=`
     <div class="fm-stat"><div class="fm-n" style="color:var(--ac)">${validExCount}</div><div class="fm-l">${lbls[0]}</div></div>
@@ -1626,7 +1755,8 @@ function endSession(){
     <div class="fm-stat"><div class="fm-n" style="color:var(--go)">${Math.round(totalVol)}</div><div class="fm-l">${lbls[2]} kg</div></div>
     <div class="fm-stat"><div class="fm-n" style="color:var(--gr)">${elapsed}</div><div class="fm-l">${lbls[3]} min</div></div>`;
   const praises=['🔥 今日も熱かった！','💪 着実に強くなっている！','⚡ 最高の集中力！','🏆 最高のセッション！'];
-  const lastSame=[...records].reverse().find(r=>r.progName===session.name);
+  // 前回比：この記録日より前の同名記録（自分自身は除く）
+  const lastSame=records.filter(r=>r&&r.progName===session.name&&r._id!==_eid0&&!(session.sid&&r._sid===session.sid)&&new Date(r.date).getTime()<_dms).sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
   let praise=praises[Math.floor(Math.random()*praises.length)];
   if(lastSame){const diff=Math.round(totalVol-lastSame.totalVol);praise+=`\n前回比 ${diff>=0?'▲':'▼'}${Math.abs(diff)}kg`}
   document.getElementById('fm-praise').textContent=praise;
@@ -1639,7 +1769,8 @@ function endSession(){
     sets:ex.sets.filter(s=>parseInt(s.reps||0)>0)
   })).filter(ex=>ex.sets.length>0);
   const cleanedVol=Math.round(cleanedExs.reduce((a,ex)=>a+ex.sets.reduce((b,s)=>b+calcSetVol(s),0),0));
-  window._pendingRec={_id:_editId||('r'+Math.random().toString(36).slice(2)),date:_origRec?_origRec.date:new Date().toISOString(),progName:session.name,exercises:JSON.parse(JSON.stringify(cleanedExs)),totalVol:cleanedVol,elapsed,_editId};
+  window._pendingRec={_id:_editId||('r'+Math.random().toString(36).slice(2)),date:_dateISO,progName:session.name,exercises:JSON.parse(JSON.stringify(cleanedExs)),totalVol:cleanedVol,elapsed,_editId};
+  _renderFmDate();
   document.getElementById('fm-bg').classList.add('show');
 }
 function backToSession(){document.getElementById('fm-bg').classList.remove('show');session.start=Date.now()-((window._pendingRec?.elapsed||0)*60000);startElapsedTimer();nav('session')}
@@ -2718,7 +2849,7 @@ function loadRecordToSession(globalIdx){
   // 累積時間：前回のelapsedを引き継いでstartを過去にオフセット
   const prevElapsed=(r.elapsed||0)*60000;
   session={name:sessName,exs:sessExercises,idx:0,start:Date.now()-prevElapsed,_editId:r._id,_baseElapsed:r.elapsed||0};
-  _ensureSid();saveDraft();
+  _initSessTimes();_ensureSid();saveDraft();
   nav('session');renderSession();startElapsedTimer();
 }
 function renderCalDet(){
