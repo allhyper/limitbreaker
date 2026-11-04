@@ -2,32 +2,47 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 共通ルール
+
+このリポジトリは `allhyper/ai-rules` の共通ルールに従う：
+https://github.com/allhyper/ai-rules/blob/main/CLAUDE_RULES.md
+
+特に守ること（共通ルールの要点）：
+
+- 目的達成を優先し、問題が起きても原因調査 → 仮説 → 検証 → 修正で自分で前に進める
+- 削除・本番変更・外部サービスへの書き込み・`git push` は事前にオーナーへ確認する
+- 削除より隔離を優先する。README / CLAUDE.md / docs は削除しない
+- API キーなどの秘密情報はファイルに書かない（`.env` に置き、Git に入れない）
+- 報告は結論から。オーナーに求めるのは方針・優先順位・公開・予算・リスクの判断だけ
+
+
 ## Project Overview
 
 LimitBreaker is a mobile-first Progressive Web App (PWA) for tracking weightlifting sessions and body composition. The UI is in Japanese. There is no build step — the entire app lives in a single HTML file.
 
 ## Running Locally
 
-Serve the `files/` directory over HTTP (HTTPS required in production for Service Worker):
+The app files live at the repository root (`index.html`, `sw.js`, `manifest.json`, `icons/`, `sounds/`). Serve the root over HTTP (HTTPS required in production for Service Worker):
 
 ```bash
-cd files
 python -m http.server 8000
 # Then open http://localhost:8000
 ```
 
-The production-ready deployment package is in `LimitBreaker_deploy_14/LimitBreaker_deploy/`.
+Production is GitHub Pages at path `/limitbreaker/`.
 
 ## Architecture
 
-The entire app is `files/index.html` (~2600 lines). It is a zero-dependency SPA with three conceptual layers all in that one file:
+The entire app is `index.html` (~3600 lines). It is a zero-dependency SPA with three conceptual layers all in that one file:
 
 **Data layer** — a LocalStorage wrapper using the `il11_` key prefix. All persistence goes through this. Key storage objects:
 - `il11_settings` — unit (kg/lb), equipment weights, timer preferences, height
 - `il11_masterDB` — exercise library (array of exercise objects)
 - `il11_routines` — workout templates
 - `il11_records` — completed workout sessions
-- `il11_body` — body composition entries
+- `il11_bodyData` — body composition entries
+- `il11_goalText` — goal text
+- `il11_schemaVer` — schema version (see データ保護ルール)
 
 **UI rendering layer** — each screen is rendered by a dedicated function:
 - `renderHome()`, `renderSession()`, `renderStats()`, `renderBody()`, `renderCal()`, `renderDBList()`, `renderSettings()`
@@ -52,11 +67,11 @@ Navigation is tab-based. Screens are HTML elements with IDs like `sc-home`, `sc-
 
 ## Service Worker & Caching
 
-`files/sw.js` uses a network-first strategy. The cache version is `lb-v14`. When updating the app, bump this version string so clients pick up new files.
+`sw.js` uses a network-first strategy. The cache version is `CACHE_VERSION` (currently `lb-v30`). When updating the app, bump this version string so clients pick up new files.
 
 ## Deployment
 
-The app is deployed at path `/limitbreaker/` (set in `manifest.json` `start_url` and `scope`). When creating a new deployment package, copy `files/` contents and increment the cache version in `sw.js`.
+The app is deployed at path `/limitbreaker/` (set in `manifest.json` `start_url` and `scope`). When deploying an update, increment `CACHE_VERSION` in `sw.js`.
 
 ## Calculations
 
